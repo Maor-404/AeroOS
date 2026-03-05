@@ -8,6 +8,9 @@ export class StartMenu {
   init(onLaunch) {
     this.onLaunch = onLaunch;
     this.render('');
+
+    this.eventBus.on('app:registered', () => this.render(this.node.querySelector('#start-search')?.value || ''));
+    this.eventBus.on('app:unregistered', () => this.render(this.node.querySelector('#start-search')?.value || ''));
     document.addEventListener('click', (e) => {
       if (!e.target.closest('#start-menu') && !e.target.closest('#start-button')) {
         this.hide();

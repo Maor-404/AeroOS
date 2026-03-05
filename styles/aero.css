@@ -216,3 +216,23 @@ html, body {
 .browser-toolbar { display: flex; gap: 8px; padding: 8px; }
 .browser-toolbar input { flex: 1; }
 .mini-browser iframe { width: 100%; height: 100%; border: none; background: white; }
+
+.boot-log {
+  margin: 0;
+  max-height: 110px;
+  overflow: auto;
+  padding: 10px;
+  width: 420px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 12px;
+  color: #d6f5ff;
+}
+
+.task-manager { padding: 10px; display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+.task-manager table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.task-manager th, .task-manager td { border-bottom: 1px solid rgba(255,255,255,.18); padding: 4px; }
+.task-manager button { font-size: 11px; }
+
+.sys-monitor { padding: 10px; display: grid; grid-template-rows: auto auto; gap: 8px; }
+.sys-monitor canvas { width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,.25); }

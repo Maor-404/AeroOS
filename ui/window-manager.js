@@ -10,7 +10,7 @@ export class WindowManager {
 
   create(app, appContext) {
     const id = `w-${this.nextId++}`;
-    const process = this.processManager.launch(app.id, { windowId: id });
+    const process = this.processManager.spawnProcess(app.id, { windowId: id }, { launchedBy: app.id, priority: 6, memory: 45 });
     const frame = document.createElement('section');
     frame.className = 'window-frame';
     frame.dataset.windowId = id;
@@ -32,7 +32,7 @@ export class WindowManager {
       <div class="resize-handle"></div>
     `;
 
-    const state = { id, frame, app, process, minimized: false, maximized: false };
+    const state = { id, frame, app, process, minimized: false, maximized: false, dispose: null };
     this.windows.set(id, state);
     this.layer.appendChild(frame);
     this.focus(id);
@@ -41,7 +41,8 @@ export class WindowManager {
     this.bindControls(state);
 
     const mount = frame.querySelector('.window-content');
-    app.launch({ ...appContext, mount, windowId: id, close: () => this.close(id) });
+    const result = app.launch({ ...appContext, mount, windowId: id, close: () => this.close(id), appId: app.id });
+    if (typeof result === 'function') state.dispose = result;
 
     this.eventBus.emit('window:opened', state);
     return id;
@@ -97,9 +98,10 @@ export class WindowManager {
   close(id) {
     const state = this.windows.get(id);
     if (!state) return;
+    if (typeof state.dispose === 'function') state.dispose();
     state.frame.remove();
     this.windows.delete(id);
-    this.processManager.stop(state.process.pid);
+    this.processManager.killProcess(state.process.pid);
     this.eventBus.emit('window:closed', state);
   }
 

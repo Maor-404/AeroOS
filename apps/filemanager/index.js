@@ -5,6 +5,7 @@ export const fileManagerApp = {
   name: 'File Manager',
   category: 'Utilities',
   icon: '📁',
+  permissions: ['filesystem.read', 'filesystem.write', 'filesystem.delete', 'notifications'],
   defaultSize: { width: 840, height: 520 },
   launch(ctx) {
     const { mount, services } = ctx;

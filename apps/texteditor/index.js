@@ -3,6 +3,7 @@ export const textEditorApp = {
   name: 'Text Editor',
   category: 'Productivity',
   icon: '📝',
+  permissions: ['filesystem.read', 'filesystem.write', 'notifications'],
   defaultSize: { width: 760, height: 500 },
   launch(ctx) {
     const { mount, services } = ctx;

@@ -2,6 +2,12 @@ import { EventBus } from './event-bus.js';
 import { ProcessManager } from './process-manager.js';
 import { FileSystem } from './filesystem.js';
 import { PermissionManager } from './permissions.js';
+import { MemoryManager } from './memory-manager.js';
+import { Scheduler } from './scheduler.js';
+import { ServiceManager } from './service-manager.js';
+import { PackageManager } from './package-manager.js';
+import { NetworkLayer } from './network.js';
+import { SandboxFactory } from './sandbox.js';
 import { AppRegistry } from '../system/app-registry.js';
 import { IconLoader } from '../system/icon-loader.js';
 import { ThemeManager } from '../system/theme-manager.js';
@@ -16,41 +22,92 @@ import { fileManagerApp } from '../apps/filemanager/index.js';
 import { textEditorApp } from '../apps/texteditor/index.js';
 import { settingsApp } from '../apps/settings/index.js';
 import { browserApp } from '../apps/browser/index.js';
+import { taskManagerApp } from '../apps/taskmanager/index.js';
+import { systemMonitorApp } from '../apps/systemmonitor/index.js';
+
+const FILE_ASSOC = {
+  '.txt': 'texteditor',
+  '.md': 'texteditor',
+  '.json': 'texteditor',
+  '.png': 'browser',
+};
 
 export class Kernel {
   constructor() {
     this.events = new EventBus();
-    this.processes = new ProcessManager(this.events);
-    this.permissions = new PermissionManager();
+    this.memory = new MemoryManager(this.events);
+    this.processes = new ProcessManager(this.events, this.memory);
+    this.permissions = new PermissionManager(this.events);
     this.fs = new FileSystem(this.events);
     this.registry = new AppRegistry(this.events);
     this.icons = new IconLoader();
     this.theme = new ThemeManager(this.events);
+    this.network = new NetworkLayer(this.events);
     this.windowManager = new WindowManager(this.events, this.processes);
     this.desktop = new Desktop(this.events, this.fs, this.icons);
     this.taskbar = new Taskbar(this.events);
     this.startMenu = new StartMenu(this.events, this.registry);
     this.contextMenu = new ContextMenu(this.events);
     this.notifications = new NotificationCenter(this.events);
+    this.scheduler = new Scheduler(this.events, this.processes);
+    this.services = new ServiceManager(this.events, this.processes);
+    this.packages = new PackageManager(this.events, this.fs, this.registry);
+    this.sandboxFactory = new SandboxFactory({
+      fs: this.fs,
+      events: this.events,
+      windowManager: this.windowManager,
+      permissions: this.permissions,
+      packageManager: this.packages,
+      processManager: this.processes,
+      scheduler: this.scheduler,
+      network: this.network,
+      memoryManager: this.memory,
+    });
   }
 
   exposePublicApi() {
     return {
-      registerApp: (config) => this.registry.register(config),
+      registerApp: (config) => this.registerExternalApp(config),
+      createApp: (config) => this.registerExternalApp(config),
       listApps: () => this.registry.list(),
       openApp: (id) => this.openApp(id),
       fs: this.fs,
       events: this.events,
+      api: this.sandboxFactory.create('developer-sdk'),
     };
   }
 
+  registerExternalApp(config) {
+    const normalized = {
+      ...config,
+      id: config.id || `external:${config.name?.toLowerCase().replace(/\s+/g, '-')}`,
+      category: config.category || 'External',
+      icon: config.icon || '🧩',
+      launch: config.launch,
+      permissions: config.permissions || [],
+    };
+    this.permissions.registerApp(normalized.id, normalized.permissions);
+    this.registry.register(normalized);
+  }
+
   async boot() {
-    await this.animateBoot();
+    await this.animateBoot([
+      'Initializing Kernel...',
+      'Mounting Filesystem...',
+      'Starting Services...',
+      'Launching Desktop Environment...',
+      'Welcome to AeroOS',
+    ]);
     this.theme.init();
     await this.fs.init();
     await this.seedUserFiles();
 
     this.registerApps();
+    await this.packages.restoreInstalled();
+
+    this.services.registerDefaults(this.network);
+    this.services.startAll();
+    this.scheduler.start(700);
 
     this.taskbar.init({ onStart: () => this.startMenu.toggle(), onTaskClick: (id) => this.windowManager.toggleMinimize(id) });
     this.startMenu.init((appId) => this.openApp(appId));
@@ -78,40 +135,54 @@ export class Kernel {
     this.events.emit('notify', { message: 'Welcome to AeroOS', type: 'info' });
   }
 
-  async animateBoot() {
+  async animateBoot(lines) {
     const boot = document.getElementById('boot-screen');
     const bar = boot.querySelector('.boot-progress span');
+    const log = boot.querySelector('.boot-log');
+
+    for (const line of lines) {
+      await new Promise((resolve) => setTimeout(resolve, 180));
+      log.textContent += `${line}\n`;
+    }
+
     await new Promise((resolve) => {
       setTimeout(() => {
         bar.style.width = '100%';
       }, 100);
-      setTimeout(resolve, 850);
+      setTimeout(resolve, 900);
     });
+
     boot.classList.add('hidden');
     document.getElementById('aero-os').classList.remove('hidden');
   }
 
   registerApps() {
-    [terminalApp, fileManagerApp, textEditorApp, settingsApp, browserApp].forEach((app) => {
+    [terminalApp, fileManagerApp, textEditorApp, settingsApp, browserApp, taskManagerApp, systemMonitorApp].forEach((app) => {
       app.icon = app.icon || this.icons.get(app.id);
+      this.permissions.registerApp(app.id, app.permissions || []);
       this.registry.register(app);
     });
   }
 
-  appContext() {
+  appContext(appId) {
     return {
       services: {
         fs: this.fs,
         events: this.events,
         theme: this.theme,
+        processes: this.processes,
+        scheduler: this.scheduler,
+        memory: this.memory,
+        packages: this.packages,
       },
+      api: this.sandboxFactory.create(appId),
     };
   }
 
   openApp(appId) {
     const app = this.registry.get(appId);
     if (!app) throw new Error(`Unknown app ${appId}`);
-    this.windowManager.create(app, this.appContext());
+    this.windowManager.create(app, this.appContext(appId));
   }
 
   async openPath(path) {
@@ -121,7 +192,10 @@ export class Kernel {
       this.openApp('filemanager');
       return;
     }
-    this.openApp('texteditor');
+
+    const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
+    const preferred = FILE_ASSOC[ext] || 'texteditor';
+    this.openApp(preferred);
   }
 
   async createDesktopFolder() {

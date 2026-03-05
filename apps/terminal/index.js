@@ -5,6 +5,7 @@ export const terminalApp = {
   name: 'Terminal',
   category: 'System',
   icon: '🖥️',
+  permissions: ['filesystem.read', 'filesystem.write', 'notifications'],
   defaultSize: { width: 760, height: 440 },
   launch(ctx) {
     const { mount, services } = ctx;
@@ -33,7 +34,7 @@ export const terminalApp = {
     };
 
     const commands = {
-      help: () => 'help ls cd pwd mkdir touch rm cat echo clear whoami date tree',
+      help: () => 'help ls cd pwd mkdir touch rm cat echo clear whoami date tree ps kill suspend resume aeropkg',
       pwd: () => cwd,
       whoami: () => 'user',
       date: () => new Date().toString(),
@@ -71,6 +72,25 @@ export const terminalApp = {
         const all = await services.fs.all();
         return all.map((n) => `${n.type === 'dir' ? '📁' : '📄'} ${n.path}`).join('\n');
       },
+      ps: () => services.processes.listProcesses().map((p) => `${p.pid}\t${p.state}\t${p.cpuUsage}%\t${p.name}`).join('\n'),
+      kill: (args) => (services.processes.killProcess(Number(args[0])) ? '' : 'process not found'),
+      suspend: (args) => (services.processes.suspendProcess(Number(args[0])) ? '' : 'process not found'),
+      resume: (args) => (services.processes.resumeProcess(Number(args[0])) ? '' : 'process not found'),
+      aeropkg: async (args) => {
+        const sub = args[0];
+        if (sub === 'install') {
+          await services.packages.install(args[1]);
+          return `installed ${args[1]}`;
+        }
+        if (sub === 'remove') {
+          await services.packages.remove(args[1]);
+          return `removed ${args[1]}`;
+        }
+        if (sub === 'list') return services.packages.list().join('\n') || '(none)';
+        if (sub === 'update') return services.packages.update();
+        if (sub === 'update-system') return services.packages.updateSystem();
+        return 'usage: aeropkg install|remove|list|update|update-system <name>';
+      },
     };
 
     const run = async (value) => {
@@ -83,13 +103,13 @@ export const terminalApp = {
       }
       try {
         const result = await commands[cmd](args);
-        if (result) result.split('\n').forEach(print);
+        if (result) result.toString().split('\n').forEach(print);
       } catch (error) {
         print(`error: ${error.message}`);
       }
     };
 
-    print('AeroOS Terminal v1.0');
+    print('AeroOS Terminal v2.0');
     print('Type help for commands');
 
     form.addEventListener('submit', async (e) => {

@@ -6,6 +6,8 @@ export class IconLoader {
       texteditor: '📝',
       settings: '⚙️',
       browser: '🌐',
+      taskmanager: '📊',
+      systemmonitor: '🛰️',
       folder: '📂',
       file: '📄',
     };

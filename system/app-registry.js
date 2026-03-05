@@ -10,6 +10,14 @@ export class AppRegistry {
     this.eventBus.emit('app:registered', config);
   }
 
+  unregister(id) {
+    if (this.apps.has(id)) {
+      const config = this.apps.get(id);
+      this.apps.delete(id);
+      this.eventBus.emit('app:unregistered', config);
+    }
+  }
+
   get(id) {
     return this.apps.get(id);
   }

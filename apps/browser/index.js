@@ -3,6 +3,7 @@ export const browserApp = {
   name: 'Aero Browser',
   category: 'Internet',
   icon: '🌐',
+  permissions: ['network'],
   defaultSize: { width: 900, height: 560 },
   launch(ctx) {
     const { mount } = ctx;

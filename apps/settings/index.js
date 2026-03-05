@@ -3,6 +3,7 @@ export const settingsApp = {
   name: 'Settings',
   category: 'System',
   icon: '⚙️',
+  permissions: ['system.theme'],
   defaultSize: { width: 620, height: 420 },
   launch(ctx) {
     const { mount, services } = ctx;
