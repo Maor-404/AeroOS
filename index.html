@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AeroOS</title>
+    <link rel="stylesheet" href="./styles/aero.css" />
+  </head>
+  <body>
+    <div id="boot-screen">
+      <div class="boot-logo">AeroOS</div>
+      <div class="boot-progress"><span></span></div>
+      <p>Booting modular desktop kernel...</p>
+      <pre class="boot-log"></pre>
+    </div>
+
+    <div id="user-setup" class="user-setup hidden"></div>
+
+    <div id="aero-os" class="hidden">
+      <div id="wallpaper"></div>
+      <div id="bubble-layer"></div>
+      <div id="desktop-icons"></div>
+      <div id="selection-box"></div>
+      <div id="window-layer"></div>
+      <div id="notifications"></div>
+      <div id="context-menu" class="context-menu hidden"></div>
+      <div id="start-menu" class="start-menu hidden"></div>
+      <div id="taskbar"></div>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
