@@ -1,0 +1,92 @@
+#!/bin/bash
+# ==============================================================================
+# AeroOS Theme Selector
+# Description: Instantly switches Sway, Waybar, and Wofi themes.
+# ==============================================================================
+
+set -euo pipefail
+
+THEME_DIR="/usr/share/aeroos/themes"
+USER_CONFIG_DIR="${HOME}/.config"
+
+show_usage() {
+    echo "AeroOS Theme Selector"
+    echo "Usage: aero-theme [nordic|sonokai|nostalgia9x]"
+    echo ""
+    echo "Available Themes:"
+    echo "  * nordic      - Clean, modern dark frosty theme (Default)"
+    echo "  * sonokai     - Vibrant developer theme"
+    echo "  * nostalgia9x - Classic retro Windows 9x teal style"
+    exit 1
+}
+
+# If no arguments, show a simple interactive selection menu
+if [ $# -eq 0 ]; then
+    echo "=========================================="
+    echo "     AeroOS Theme Selector Menu"
+    echo "=========================================="
+    echo "1) Nordic (Frosty Dark)"
+    echo "2) Sonokai (High-Contrast Dark)"
+    echo "3) Nostalgia 9x (Classic Windows 95)"
+    echo "=========================================="
+    read -rp "Select a theme [1-3]: " choice
+    case $choice in
+        1) THEME="nordic" ;;
+        2) THEME="sonokai" ;;
+        3) THEME="nostalgia9x" ;;
+        *) echo "[-] Invalid selection."; exit 1 ;;
+    esac
+else
+    THEME="$1"
+fi
+
+if [ "${THEME}" != "nordic" ] && [ "${THEME}" != "sonokai" ] && [ "${THEME}" != "nostalgia9x" ]; then
+    echo "[-] Error: Unknown theme '${THEME}'."
+    show_usage
+fi
+
+echo "[+] Activating '${THEME}' theme..."
+
+# Ensure config directories exist
+mkdir -p "${USER_CONFIG_DIR}/sway"
+mkdir -p "${USER_CONFIG_DIR}/waybar"
+mkdir -p "${USER_CONFIG_DIR}/wofi"
+
+# Swap Sway Theme
+if [ -f "${THEME_DIR}/${THEME}/sway.theme" ]; then
+    rm -f "${USER_CONFIG_DIR}/sway/theme"
+    ln -sf "${THEME_DIR}/${THEME}/sway.theme" "${USER_CONFIG_DIR}/sway/theme"
+fi
+
+# Swap Waybar Stylesheet
+if [ -f "${THEME_DIR}/${THEME}/waybar.css" ]; then
+    rm -f "${USER_CONFIG_DIR}/waybar/style.css"
+    ln -sf "${THEME_DIR}/${THEME}/waybar.css" "${USER_CONFIG_DIR}/waybar/style.css"
+fi
+
+# Swap Wofi Stylesheet
+if [ -f "${THEME_DIR}/${THEME}/wofi.css" ]; then
+    rm -f "${USER_CONFIG_DIR}/wofi/style.css"
+    ln -sf "${THEME_DIR}/${THEME}/wofi.css" "${USER_CONFIG_DIR}/wofi/style.css"
+fi
+
+# Set GTK theme overrides if relevant
+if [ "${THEME}" = "nostalgia9x" ]; then
+    # Set vintage GTK theme if Chicago95 is installed
+    gsettings set org.gnome.desktop.interface gtk-theme "Chicago95" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme "Chicago95" 2>/dev/null || true
+elif [ "${THEME}" = "nordic" ]; then
+    gsettings set org.gnome.desktop.interface gtk-theme "Nordic" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme "Papirus" 2>/dev/null || true
+else
+    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || true
+fi
+
+# Reload Sway configuration in real-time
+if command -v swaymsg &> /dev/null && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    echo "[+] Reloading Sway..."
+    swaymsg reload
+fi
+
+echo "[+] AeroOS Theme successfully updated to '${THEME}'!"

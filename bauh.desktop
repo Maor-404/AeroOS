@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Aero App Center
+Comment=Install and manage Flatpaks, Snaps, AppImages, and Webapps
+Exec=/usr/local/bin/bauh
+Icon=system-software-install
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=store;apps;install;gaming;flatpak;snap;

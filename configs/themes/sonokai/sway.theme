@@ -1,0 +1,6 @@
+# Sonokai Theme Config for Sway
+output * bg #2c2e34 solid
+client.focused          #7ec7a2 #7ec7a2 #181819 #76cce0 #7ec7a2
+client.focused_inactive #3d424d #3d424d #e2e2e3 #3d424d #3d424d
+client.unfocused        #2c2e34 #2c2e34 #e2e2e3 #2c2e34 #2c2e34
+client.urgent           #f3a96a #f3a96a #e2e2e3 #f3a96a #f3a96a

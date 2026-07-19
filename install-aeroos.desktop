@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Install AeroOS
+Comment=Install the operating system to your computer
+Exec=sudo calamares -d
+Icon=install
+Terminal=false
+Type=Application
+Categories=System;

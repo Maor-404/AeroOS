@@ -1,0 +1,19 @@
+window {
+    margin: 10px;
+    border: 2px solid #7ec7a2;
+    border-radius: 8px;
+    background-color: rgba(44, 46, 52, 0.95);
+    font-family: "Outfit", sans-serif;
+    color: #e2e2e3;
+}
+#input {
+    margin: 10px;
+    border: 1px solid #3d424d;
+    border-radius: 4px;
+    padding: 8px;
+    background-color: #34373e;
+    color: #e2e2e3;
+}
+#input:focus { border: 2px solid #76cce0; }
+#entry:selected { background-color: #7ec7a2; color: #181819; }
+#text { margin-left: 10px; }

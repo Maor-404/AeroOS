@@ -1,0 +1,19 @@
+window {
+    margin: 10px;
+    border: 3px solid #dfdfdf;
+    background-color: #c0c0c0;
+    font-family: "MS Sans Serif", sans-serif;
+    color: #000000;
+}
+#input {
+    margin: 10px;
+    border-left: 2px solid #808080;
+    border-top: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    padding: 6px;
+    background-color: #ffffff;
+    color: #000000;
+}
+#entry:selected { background-color: #000080; color: #ffffff; }
+#text { margin-left: 10px; }

@@ -1,0 +1,6 @@
+# Nostalgia 9x Theme Config for Sway (Classic Windows 95 Teal!)
+output * bg #008080 solid
+client.focused          #000080 #000080 #ffffff #c0c0c0 #000080
+client.focused_inactive #808080 #808080 #c0c0c0 #808080 #808080
+client.unfocused        #c0c0c0 #c0c0c0 #000000 #c0c0c0 #c0c0c0
+client.urgent           #ff0000 #ff0000 #ffffff #ff0000 #ff0000
