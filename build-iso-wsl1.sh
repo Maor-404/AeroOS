@@ -72,17 +72,34 @@ cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
 cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
 chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
 
+# 5. Bind mount device filesystems for Chroot
+echo "[+] Setting up chroot virtual mounts..."
+mkdir -p "${CHROOT_DIR}/dev" "${CHROOT_DIR}/run" "${CHROOT_DIR}/dev/pts" "${CHROOT_DIR}/proc" "${CHROOT_DIR}/sys" "${CHROOT_DIR}/tmp"
+mount --bind /dev "${CHROOT_DIR}/dev"
+mount --bind /run "${CHROOT_DIR}/run"
+mount -t devpts devpts "${CHROOT_DIR}/dev/pts"
+mount -t proc proc "${CHROOT_DIR}/proc"
+mount -t sysfs sysfs "${CHROOT_DIR}/sys"
+mount -t tmpfs tmpfs "${CHROOT_DIR}/tmp"
+
 rm -f "${CHROOT_DIR}/etc/resolv.conf" || true
 echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 
-# 5. Run customization using PRoot (simulates mount and chroot in user-space)
-echo "[+] Running installer script in PRoot..."
-# PRoot maps host /dev, /proc, and /sys into the guest filesystem automatically
-proot -r "${CHROOT_DIR}" -b /dev -b /proc -b /sys \
-    /bin/bash -c "cd /opt/aeroos && ./aero-setup.sh"
+# 6. Execute aero-setup.sh in Chroot
+echo "[+] Executing customization script inside the chroot environment..."
+chroot "${CHROOT_DIR}" /bin/bash -c "cd /opt/aeroos && ./aero-setup.sh"
 
 # Clean up build files inside the target filesystem
 rm -rf "${CHROOT_DIR}/opt/aeroos"
+
+# 7. Unmount Chroot mounts
+echo "[+] Cleaning up chroot virtual mounts..."
+umount "${CHROOT_DIR}/dev/pts" || true
+umount "${CHROOT_DIR}/dev" || true
+umount "${CHROOT_DIR}/run" || true
+umount "${CHROOT_DIR}/proc" || true
+umount "${CHROOT_DIR}/sys" || true
+umount "${CHROOT_DIR}/tmp" || true
 
 # 6. Repackage SquashFS
 echo "[+] Repackaging squashfs filesystem..."
