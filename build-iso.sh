@@ -41,12 +41,15 @@ mount -o loop "${ISO_NAME}" "${ISO_MOUNT}"
 # Dynamically discover the root squashfs (the one containing /bin/bash)
 echo "[+] Scanning squashfs layers to find the base root filesystem..."
 SQUASHFS_PATH=""
+# Temporarily disable exit-on-error and pipefail because grep exiting with 1 on non-matching files is expected
+set +eo pipefail
 for sq in "${ISO_MOUNT}/casper"/*.squashfs; do
     if unsquashfs -l "$sq" | grep -q "bin/bash$"; then
         SQUASHFS_PATH="$sq"
         break
     fi
 done
+set -eo pipefail
 
 if [ -z "${SQUASHFS_PATH}" ]; then
     echo "[-] Error: Could not find base squashfs containing /bin/bash"
