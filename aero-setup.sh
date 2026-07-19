@@ -32,7 +32,7 @@ add-apt-repository -y ppa:lutris-team/lutris
 # WineHQ Repository Setup
 echo "[+] Adding WineHQ repository..."
 mkdir -pm755 /etc/apt/keyrings
-wget -O - https://dl.winehq.org/wine-builds/winehq.key | gpg --dearmor -o /etc/apt/keyrings/winehq-archive-keyring.gpg
+wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/$(lsb_release -cs)/winehq-$(lsb_release -cs).sources
 
 # 3. Add External Repositories (Brave Browser, VS Code)
