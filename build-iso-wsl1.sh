@@ -42,7 +42,12 @@ echo "[+] Extracting ISO contents using 7z..."
 
 # 3. Extract SquashFS Root Filesystem
 echo "[+] Extracting squashfs filesystem (this may take a few minutes)..."
-unsquashfs -d "${CHROOT_DIR}" "${ISO_FILES}/casper/filesystem.squashfs"
+# Dynamically discover the root squashfs (the largest squashfs in casper)
+SQUASHFS_PATH=$(find "${ISO_FILES}/casper" -name "*.squashfs" -printf "%s %p\n" | sort -n | tail -n 1 | cut -d' ' -f2)
+SQUASHFS_NAME=$(basename "${SQUASHFS_PATH}")
+echo "[+] Detected root squashfs: ${SQUASHFS_NAME}"
+
+unsquashfs -d "${CHROOT_DIR}" "${SQUASHFS_PATH}"
 
 # 4. Copy AeroOS installation scripts into the chroot
 echo "[+] Copying customization scripts into chroot..."
@@ -62,8 +67,8 @@ rm -rf "${CHROOT_DIR}/opt/aeroos"
 
 # 6. Repackage SquashFS
 echo "[+] Repackaging squashfs filesystem..."
-rm -f "${ISO_FILES}/casper/filesystem.squashfs"
-mksquashfs "${CHROOT_DIR}" "${ISO_FILES}/casper/filesystem.squashfs" -comp xz
+rm -f "${ISO_FILES}/casper/${SQUASHFS_NAME}"
+mksquashfs "${CHROOT_DIR}" "${ISO_FILES}/casper/${SQUASHFS_NAME}" -comp xz
 
 # 7. Generate Custom Bootable ISO
 echo "[+] Creating custom bootable ISO via xorriso..."
