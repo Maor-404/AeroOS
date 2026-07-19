@@ -53,6 +53,7 @@ umount "${ISO_MOUNT}"
 
 # 4. Bind mount device filesystems for Chroot
 echo "[+] Setting up chroot virtual mounts..."
+mkdir -p "${CHROOT_DIR}/dev" "${CHROOT_DIR}/run" "${CHROOT_DIR}/dev/pts" "${CHROOT_DIR}/proc" "${CHROOT_DIR}/sys" "${CHROOT_DIR}/tmp"
 mount --bind /dev "${CHROOT_DIR}/dev"
 mount --bind /run "${CHROOT_DIR}/run"
 mount -t devpts devpts "${CHROOT_DIR}/dev/pts"
