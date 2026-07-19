@@ -38,8 +38,21 @@ fi
 echo "[+] Mounting base ISO..."
 mount -o loop "${ISO_NAME}" "${ISO_MOUNT}"
 
-# Dynamically discover the root squashfs (the largest squashfs in casper)
-SQUASHFS_PATH=$(find "${ISO_MOUNT}/casper" -name "*.squashfs" -printf "%s %p\n" | sort -n | tail -n 1 | cut -d' ' -f2)
+# Dynamically discover the root squashfs (the one containing /bin/bash)
+echo "[+] Scanning squashfs layers to find the base root filesystem..."
+SQUASHFS_PATH=""
+for sq in "${ISO_MOUNT}/casper"/*.squashfs; do
+    if unsquashfs -l "$sq" | grep -q "bin/bash$"; then
+        SQUASHFS_PATH="$sq"
+        break
+    fi
+done
+
+if [ -z "${SQUASHFS_PATH}" ]; then
+    echo "[-] Error: Could not find base squashfs containing /bin/bash"
+    exit 1
+fi
+
 SQUASHFS_NAME=$(basename "${SQUASHFS_PATH}")
 echo "[+] Detected root squashfs: ${SQUASHFS_NAME}"
 
