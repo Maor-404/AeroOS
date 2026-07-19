@@ -7,17 +7,19 @@
 
 set -euo pipefail
 
-BASE_ISO_URL="https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso"
-ISO_NAME="ubuntu-24.04-live-server-amd64.iso"
+# Dynamically discover the latest Ubuntu 24.04 point release ISO to prevent 404 errors
+echo "[+] Finding the latest Ubuntu 24.04 point release ISO..."
+ISO_NAME=$(curl -s https://releases.ubuntu.com/24.04/ | grep -oE 'ubuntu-24.04\.[0-9]+-live-server-amd64\.iso' | head -n 1)
+BASE_ISO_URL="https://releases.ubuntu.com/24.04/${ISO_NAME}"
 BUILD_DIR="/tmp/aeroos-build"
 ISO_FILES="${BUILD_DIR}/iso-files"
 CHROOT_DIR="${BUILD_DIR}/chroot"
 OUTPUT_ISO="aeroos-custom-24.04.iso"
 
 # Check dependencies
-for cmd in 7z proot mksquashfs xorriso wget rsync; do
+for cmd in 7z proot mksquashfs xorriso wget rsync curl; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full proot squashfs-tools xorriso wget rsync"
+        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full proot squashfs-tools xorriso wget rsync curl"
         exit 1
     fi
 done

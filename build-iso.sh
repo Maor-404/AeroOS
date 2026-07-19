@@ -13,8 +13,10 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-BASE_ISO_URL="https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso"
-ISO_NAME="ubuntu-24.04-live-server-amd64.iso"
+# Dynamically discover the latest Ubuntu 24.04 point release ISO to prevent 404 errors
+echo "[+] Finding the latest Ubuntu 24.04 point release ISO..."
+ISO_NAME=$(curl -s https://releases.ubuntu.com/24.04/ | grep -oE 'ubuntu-24.04\.[0-9]+-live-server-amd64\.iso' | head -n 1)
+BASE_ISO_URL="https://releases.ubuntu.com/24.04/${ISO_NAME}"
 BUILD_DIR="/tmp/aeroos-build"
 ISO_MOUNT="${BUILD_DIR}/mount"
 ISO_FILES="${BUILD_DIR}/iso-files"
