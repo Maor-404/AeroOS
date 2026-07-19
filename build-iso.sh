@@ -74,7 +74,7 @@ mount -t proc proc "${CHROOT_DIR}/proc"
 mount -t sysfs sysfs "${CHROOT_DIR}/sys"
 mount -t tmpfs tmpfs "${CHROOT_DIR}/tmp"
 rm -f "${CHROOT_DIR}/etc/resolv.conf" || true
-cp -L /etc/resolv.conf "${CHROOT_DIR}/etc/resolv.conf" || true
+echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 
 # 5. Copy AeroOS installation scripts into the chroot
 echo "[+] Copying customization scripts into chroot..."

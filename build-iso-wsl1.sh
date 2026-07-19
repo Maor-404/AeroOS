@@ -69,10 +69,13 @@ cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
 cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
 chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
 
+rm -f "${CHROOT_DIR}/etc/resolv.conf" || true
+echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
+
 # 5. Run customization using PRoot (simulates mount and chroot in user-space)
 echo "[+] Running installer script in PRoot..."
 # PRoot maps host /dev, /proc, and /sys into the guest filesystem automatically
-proot -r "${CHROOT_DIR}" -b /dev -b /proc -b /sys -b /etc/resolv.conf:/etc/resolv.conf \
+proot -r "${CHROOT_DIR}" -b /dev -b /proc -b /sys \
     /bin/bash -c "cd /opt/aeroos && ./aero-setup.sh"
 
 # Clean up build files inside the target filesystem
