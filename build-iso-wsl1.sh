@@ -31,7 +31,7 @@ mkdir -p "${BUILD_DIR}" "${ISO_FILES}" "${CHROOT_DIR}"
 # 1. Download Base ISO if not already present
 if [ ! -f "${ISO_NAME}" ]; then
     echo "[+] Downloading base Ubuntu Live Server ISO..."
-    wget -O "${ISO_NAME}" "${BASE_ISO_URL}"
+    wget --tries=10 --timeout=30 --waitretry=5 --retry-connrefused -O "${ISO_NAME}" "${BASE_ISO_URL}"
 else
     echo "[+] Base ISO already present."
 fi
