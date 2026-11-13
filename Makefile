@@ -3,7 +3,7 @@
 all: hub webapp
 
 hub:
-	go build -ldflags="-s -w" -o aero-hub ./src/aero-hub
+	rustc -O src/aero-hub/main.rs -o aero-hub
 
 webapp:
 	rustc -O src/aero-webapp/main.rs -o aero-webapp

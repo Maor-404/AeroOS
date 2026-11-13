@@ -867,6 +867,34 @@ html[data-preview-theme="nostalgia9x"] .mock-code {
   color: var(--text);
 }
 
+.version-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.version-meta-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+
+.version-meta-item .meta-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.version-meta-item strong {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
 .code-panel {
   position: relative;
 }

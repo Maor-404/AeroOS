@@ -193,17 +193,16 @@ ln -sf /usr/share/aeroos/themes/aero/swaylock.conf /etc/skel/.config/swaylock/co
 ln -sf /usr/share/aeroos/themes/aero/kitty.conf /etc/skel/.config/kitty/theme.conf
 echo "aero" > /etc/skel/.config/aeroos/current-theme
 
-# Compile & Install AeroOS Native Tools (Go: aero-hub, Rust: aero-webapp, C++: aero-browser)
-echo "[+] Building native AeroOS binaries (Go, Rust, C++)..."
+# Compile & Install AeroOS Native Tools (Rust: aero-hub & aero-webapp, C++: aero-browser)
+echo "[+] Building native AeroOS binaries (Rust, C++)..."
 apt-get install -y --no-install-recommends \
-    golang-go \
     rustc \
     g++ \
     pkg-config \
     qtbase5-dev \
     qtwebengine5-dev
 
-go build -ldflags="-s -w" -o /usr/local/bin/aero-hub ./src/aero-hub
+rustc -O src/aero-hub/main.rs -o /usr/local/bin/aero-hub
 rustc -O src/aero-webapp/main.rs -o /usr/local/bin/aero-webapp
 # shellcheck disable=SC2046
 g++ -O2 -std=c++17 -fPIC src/aero-browser/main.cpp -o /usr/local/bin/aero-browser \
@@ -258,10 +257,10 @@ systemctl enable ufw || true
 systemctl enable unattended-upgrades || true
 
 echo "[+] Purging build-time compilers and cleaning package caches..."
-apt-get purge -y golang-go rustc g++ pkg-config qtbase5-dev qtwebengine5-dev || true
+apt-get purge -y rustc g++ pkg-config qtbase5-dev qtwebengine5-dev || true
 apt-get autoremove -y
 apt-get clean
-rm -rf /var/lib/apt/lists/* /tmp/* /root/go
+rm -rf /var/lib/apt/lists/* /tmp/*
 
 echo "[+] ==========================================================="
 echo "[+] AeroOS (Sway Wayland) Installation Completed Successfully!"

@@ -46,19 +46,64 @@ aero-webapp launch excalidraw`,
     },
   };
 
-  const INSTALL_SNIPPETS = {
-    setup: `git clone https://github.com/Maor-404/AeroOS.git
+  const INSTALL_TARGETS = {
+    x64: {
+      arch: "x86_64 (64-bit)",
+      base: "Ubuntu 26.04 LTS",
+      output: "Live ISO + Bare-Metal",
+      code: `# Bare-metal Ubuntu 26.04 LTS (x86_64) setup
+git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
 chmod +x aero-setup.sh aero-theme aero-power
-sudo ./aero-setup.sh`,
-    iso: `git clone https://github.com/Maor-404/AeroOS.git
-cd AeroOS
+sudo ./aero-setup.sh
+
+# Or build a bootable x86_64 Live ISO:
 sudo apt install -y squashfs-tools xorriso wget rsync curl
 sudo ./build-iso.sh`,
-    wsl: `git clone https://github.com/Maor-404/AeroOS.git
+    },
+    x86: {
+      arch: "i386 / i686 (32-bit)",
+      base: "Debian/Ubuntu Minimal",
+      output: "Legacy Sway + Rust Core",
+      code: `# Legacy 32-bit x86 setup (compiled with Rust + C++17)
+git clone https://github.com/Maor-404/AeroOS.git
+cd AeroOS
+chmod +x aero-setup.sh aero-theme aero-power
+sudo ./aero-setup.sh
+# Compiles native i686 aero-hub & aero-webapp via rustc -O`,
+    },
+    arm64: {
+      arch: "aarch64 (ARM64)",
+      base: "Ubuntu 26.04 LTS ARM64",
+      output: "Pi 5 / Apple Silicon VM",
+      code: `# Ubuntu 26.04 LTS ARM64 (Raspberry Pi 5, UTM, QEMU, Cloud)
+git clone https://github.com/Maor-404/AeroOS.git
+cd AeroOS
+chmod +x aero-setup.sh aero-theme aero-power
+sudo ./aero-setup.sh
+# Builds native aarch64 aero-hub, aero-webapp & aero-browser`,
+    },
+    docker: {
+      arch: "linux/amd64, linux/arm64",
+      base: "ubuntu:26.04 OCI",
+      output: "Containerized Control Hub",
+      code: `# Build & run the AeroOS Control Hub container
+git clone https://github.com/Maor-404/AeroOS.git
+cd AeroOS
+docker build -t aeroos:26.04 .
+docker run --rm -p 8080:8080 aeroos:26.04
+# Open http://localhost:8080 in your browser`,
+    },
+    wsl: {
+      arch: "x86_64 (Windows Host)",
+      base: "WSL1 / WSL2 + Ubuntu 26.04",
+      output: "aeroos-custom-26.04.iso",
+      code: `# Build a bootable AeroOS 26.04 LTS ISO inside WSL1 / WSL2
+git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
 sudo apt install -y p7zip-full squashfs-tools xorriso wget rsync curl
 sudo ./build-iso-wsl1.sh`,
+    },
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -144,7 +189,11 @@ sudo ./build-iso-wsl1.sh`,
       });
       btn.classList.add("active");
       btn.setAttribute("aria-selected", "true");
-      $("#install-code-view").textContent = INSTALL_SNIPPETS[btn.dataset.install] || "";
+      const target = INSTALL_TARGETS[btn.dataset.install] || INSTALL_TARGETS.x64;
+      $("#ver-arch").textContent = target.arch;
+      $("#ver-base").textContent = target.base;
+      $("#ver-output").textContent = target.output;
+      $("#install-code-view").textContent = target.code;
     });
   });
 

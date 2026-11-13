@@ -9,8 +9,8 @@ AeroOS transforms a minimal **Ubuntu 26.04 LTS** system into a fast, gaming-tune
   - **Nordic Frost**: Calm Polar Night & glacial cyan minimalism with arctic aurora wallpaper.
   - **Sonokai Obsidian**: Matte charcoal workspace with sage-emerald & ice-cyan accents.
   - **Nostalgia 9x**: Classic Windows 95 beveled taskbar and `#008080` teal styling.
-- **AeroOS Control Hub (`aero-hub`, Go)**:
-  - Native Go loopback HTTP + REST backend paired with a frameless `aero-browser --app` / Chromium window (`docs/hub/`).
+- **AeroOS Control Hub (`aero-hub`, Rust)**:
+  - Zero-dependency Rust loopback HTTP + REST backend paired with a frameless `aero-browser --app` / Chromium window (`docs/hub/`).
   - Live `/proc` CPU, memory/zRAM, disk, and `gamemoded` telemetry, visual theme studio, kernel sysctl inspector, and keyboard shortcut search (`Ctrl+K`).
 - **Aero Browser (`aero-browser`, C++17 + Qt5 WebEngine)**:
   - Lightweight tabbed Wayland browser with `--app <url>` frameless mode for isolated web apps and the Control Hub.

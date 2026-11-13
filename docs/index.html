@@ -271,21 +271,42 @@ aero-browser https://github.com
       <div class="container">
         <div class="install-layout">
           <div>
-            <span class="eyebrow">Deploy AeroOS</span>
-            <h2>Convert Ubuntu 26.04 LTS or build a Live ISO.</h2>
-            <p class="muted-copy">Run the bootstrapper on a minimal Ubuntu 26.04 LTS system, or generate a bootable ISO on Linux or WSL1.</p>
-            <div class="install-tabs" role="tablist" aria-label="Installation methods">
-              <button type="button" id="inst-tab-setup" class="perf-tab active" role="tab" aria-selected="true" data-install="setup">Ubuntu 26.04 Setup</button>
-              <button type="button" id="inst-tab-iso" class="perf-tab" role="tab" aria-selected="false" data-install="iso">Native ISO Builder</button>
-              <button type="button" id="inst-tab-wsl" class="perf-tab" role="tab" aria-selected="false" data-install="wsl">WSL1 ISO Builder</button>
+            <span class="eyebrow">Deploy AeroOS · Multi-Target</span>
+            <h2>Run on x64, x86, ARM64, Docker, or WSL.</h2>
+            <p class="muted-copy">Choose your target architecture or container runtime for Ubuntu 26.04 LTS, or build a bootable Live ISO.</p>
+            <div class="install-tabs" role="tablist" aria-label="Target versions and architectures">
+              <button type="button" id="inst-tab-x64" class="perf-tab active" role="tab" aria-selected="true" data-install="x64">x64 (x86_64)</button>
+              <button type="button" id="inst-tab-x86" class="perf-tab" role="tab" aria-selected="false" data-install="x86">x86 (32-bit)</button>
+              <button type="button" id="inst-tab-arm64" class="perf-tab" role="tab" aria-selected="false" data-install="arm64">ARM64 (aarch64)</button>
+              <button type="button" id="inst-tab-docker" class="perf-tab" role="tab" aria-selected="false" data-install="docker">Docker Container</button>
+              <button type="button" id="inst-tab-wsl" class="perf-tab" role="tab" aria-selected="false" data-install="wsl">WSL1 / WSL2</button>
+            </div>
+            <div class="version-meta-grid" aria-live="polite">
+              <div class="version-meta-item">
+                <span class="meta-label">Target Arch</span>
+                <strong id="ver-arch">x86_64 (64-bit)</strong>
+              </div>
+              <div class="version-meta-item">
+                <span class="meta-label">Base System</span>
+                <strong id="ver-base">Ubuntu 26.04 LTS</strong>
+              </div>
+              <div class="version-meta-item">
+                <span class="meta-label">Deliverable</span>
+                <strong id="ver-output">Live ISO + Bare-Metal</strong>
+              </div>
             </div>
           </div>
 
           <div class="code-panel">
-            <pre><code id="install-code-view">git clone https://github.com/Maor-404/AeroOS.git
+            <pre><code id="install-code-view"># Bare-metal Ubuntu 26.04 LTS (x86_64) setup
+git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
 chmod +x aero-setup.sh aero-theme aero-power
-sudo ./aero-setup.sh</code></pre>
+sudo ./aero-setup.sh
+
+# Or build a bootable x86_64 Live ISO:
+sudo apt install -y squashfs-tools xorriso wget rsync curl
+sudo ./build-iso.sh</code></pre>
             <button type="button" id="copy-install-btn" class="btn btn-glass">Copy</button>
           </div>
         </div>
