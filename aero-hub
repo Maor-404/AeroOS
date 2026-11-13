@@ -338,6 +338,7 @@ def make_handler(hub_dir: Path, wallpapers_dir: Path, port_holder: dict):
                 dispatch = {
                     "open-terminal": ["kitty"],
                     "open-files": ["thunar"],
+                    "open-aero-browser": [resolve_bin("aero-browser")],
                     "open-browser": ["brave-browser"],
                     "open-app-center": ["/usr/local/bin/bauh"],
                     "open-theme-menu": [resolve_bin("aero-theme"), "--menu"],

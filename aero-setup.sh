@@ -49,7 +49,7 @@ rm -f packages.microsoft.gpg
 # Update all package indices
 apt-get update
 
-# 4. Install Sway, Waybar, Wofi, Display Manager, Fonts & System Trays
+# 4. Install Sway, Waybar, Wofi, Portals, Audio, Fonts & System Trays
 echo "[+] Installing Sway Window Manager & Wayland helpers..."
 apt-get install -y --no-install-recommends \
     sway \
@@ -61,6 +61,11 @@ apt-get install -y --no-install-recommends \
     swayidle \
     mako-notifier \
     libnotify-bin \
+    xdg-desktop-portal-wlr \
+    xdg-desktop-portal-gtk \
+    pipewire \
+    wireplumber \
+    policykit-1-gnome \
     thunar \
     nm-tray \
     network-manager-gnome \
@@ -87,32 +92,41 @@ apt-get install -y --no-install-recommends \
     fonts-noto-color-emoji \
     papirus-icon-theme || true
 
-# 5. Install Productivity & Daily Tools
-echo "[+] Installing productivity software and daily-use tools..."
-apt-get install -y \
+# 5. Install Productivity, Useful Daily Tools & Curated Utilities (Lean)
+echo "[+] Installing productivity software and curated daily-use utilities..."
+apt-get install -y --no-install-recommends \
     brave-browser \
     code \
     libreoffice-calc \
     libreoffice-writer \
+    mpv \
+    imv \
+    gnome-calculator \
+    file-roller \
     btop \
     fastfetch \
+    ncdu \
+    ripgrep \
+    fzf \
     git \
     ufw \
+    unattended-upgrades \
     gparted \
     flatpak
 
 # 6. Install Gaming Stack & Performance Optimizations
-echo "[+] Installing gaming prerequisites (Steam, Wine, Lutris, GameMode)..."
+echo "[+] Installing gaming prerequisites (Steam, Wine, Lutris, GameMode, MangoHud)..."
 # Enable 32-bit architecture for Wine/Steam
 dpkg --add-architecture i386
 apt-get update
 
-# Install Wine Stable, GameMode, and Lutris
+# Install Wine Stable, GameMode, MangoHud, and Lutris
 apt-get install -y --install-recommends \
     winehq-stable \
     winetricks \
     gamemode \
     libgamemode0:i386 \
+    mangohud \
     lutris \
     steam
 
@@ -134,7 +148,7 @@ fi
 
 # Enable ZRAM for compressed RAM space (massively improves memory footprint)
 echo "[+] Enabling zRAM..."
-apt-get install -y zram-config
+apt-get install -y --no-install-recommends zram-config
 
 # 8. Visual Customization & Default Skeleton Presets
 echo "[+] Setting up user configuration templates (Sway, Waybar, Wofi, Mako, Swaylock, Kitty)..."
@@ -177,20 +191,20 @@ ln -sf /usr/share/aeroos/themes/aero/swaylock.conf /etc/skel/.config/swaylock/co
 ln -sf /usr/share/aeroos/themes/aero/kitty.conf /etc/skel/.config/kitty/theme.conf
 echo "aero" > /etc/skel/.config/aeroos/current-theme
 
-# Install AeroOS CLI & Web Hub utilities
-echo "[+] Deploying AeroOS utilities (aero-theme, aero-power, aero-webapp, aero-hub)..."
-for tool in aero-theme aero-power aero-webapp aero-hub; do
+# Install AeroOS CLI, Browser & Web Hub utilities
+echo "[+] Deploying AeroOS utilities (aero-theme, aero-power, aero-webapp, aero-hub, aero-browser)..."
+for tool in aero-theme aero-power aero-webapp aero-hub aero-browser; do
     if [ -f "./${tool}" ]; then
         cp "./${tool}" "/usr/local/bin/${tool}"
-        chmod +x "/usr/local/bin/${tool}"
+        chmod 755 "/usr/local/bin/${tool}"
     fi
 done
 
 # Install Bauh App Store via pip3
 echo "[+] Installing Bauh Universal App Store..."
-pip3 install bauh --break-system-packages
+pip3 install --no-cache-dir bauh --break-system-packages
 
-for desktop_file in bauh.desktop aero-hub.desktop aero-theme.desktop aero-webapp.desktop; do
+for desktop_file in bauh.desktop aero-hub.desktop aero-theme.desktop aero-webapp.desktop aero-browser.desktop; do
     if [ -f "./${desktop_file}" ]; then
         cp "./${desktop_file}" "/usr/share/applications/${desktop_file}"
     fi
@@ -216,11 +230,19 @@ ELECTRON_OZONE_PLATFORM_HINT=auto
 EOF
 fi
 
-# Enable UFW Firewall
-echo "[+] Hardening system security with UFW..."
+# 10. Security Hardening & Minimal Image Cleanup
+echo "[+] Hardening system security (UFW default-deny + unattended-upgrades)..."
+ufw default deny incoming || true
+ufw default allow outgoing || true
 ufw limit ssh || true
 ufw --force enable || true
 systemctl enable ufw || true
+systemctl enable unattended-upgrades || true
+
+echo "[+] Cleaning package caches to keep AeroOS minimal..."
+apt-get autoremove -y
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/*
 
 echo "[+] ==========================================================="
 echo "[+] AeroOS (Sway Wayland) Installation Completed Successfully!"

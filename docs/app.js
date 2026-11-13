@@ -6,34 +6,50 @@
     nostalgia9x: { label: "◐ nostalgia9x", title: "Nostalgia 9x" },
   };
 
-  const PERF_SNIPPETS = {
-    kernel: `# /etc/sysctl.d/99-aero-performance.conf
-vm.swappiness = 10
-vm.max_map_count = 2147483642
-vm.dirty_background_ratio = 5
-vm.dirty_ratio = 10
-net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = bbr
-fs.file-max = 2097152`,
-    gaming: `# AeroOS Gaming & Wayland Graphics Stack (aero-setup.sh)
-* ppa:kisak/kisak-mesa       -> Up-to-date Vulkan & Mesa drivers
-* winehq-stable + winetricks -> Windows compatibility layer
-* gamemode + gamemode.ini    -> Automatic CPU performance governor
-* lutris + steam + zram      -> Game launchers + compressed RAM
-* Wayland ENV hints          -> SDL/Qt/Firefox/Electron native Wayland`,
-    themes: `# Synchronized via aero-theme across 6 desktop surfaces
-~/.config/sway/theme       -> Wallpaper + window border palette
-~/.config/waybar/style.css -> Floating glass bar & module pills
-~/.config/wofi/style.css   -> Centered translucent app launcher
-~/.config/mako/config      -> Desktop notification banners
-~/.config/swaylock/config  -> Screen lock background & ring colors
-~/.config/kitty/theme.conf -> Terminal palette & background opacity`,
+  const STACK_SNIPPETS = {
+    browser: {
+      title: "aero-browser",
+      href: "hub/index.html",
+      linkText: "Open Hub →",
+      code: `# Launch Aero Browser directly or with Super+Shift+B
+aero-browser https://github.com
+
+# Features built into aero-browser:
+* Tabbed QtWebEngine browsing (Ctrl+T, Ctrl+W, Ctrl+L)
+* Persistent local cache & sandboxed plugin defaults
+* HTTPS / HTTP / LOCAL scheme status indicator
+* Registered as an XDG WebBrowser desktop application`,
+    },
+    hub: {
+      title: "aero-hub",
+      href: "hub/index.html",
+      linkText: "Try Live Hub →",
+      code: `# Launch AeroOS Control Hub (Super+A)
+aero-hub --tab overview
+
+# Built-in local capabilities:
+* Loopback HTTP + REST API bound strictly to 127.0.0.1
+* Live /proc CPU, RAM, zRAM, disk & GameMode telemetry
+* Instant 6-target theme switching & Ctrl+K command palette
+* Same-origin POST/DELETE protection`,
+    },
+    webapp: {
+      title: "aero-webapp",
+      href: "hub/index.html?tab=webapps",
+      linkText: "Manage WebApps →",
+      code: `# Install any website as a borderless Wayland desktop app
+aero-webapp install --name "Excalidraw" --url https://excalidraw.com
+
+# Launch via Wofi menu (Super+W) or CLI:
+aero-webapp menu
+aero-webapp launch excalidraw`,
+    },
   };
 
   const INSTALL_SNIPPETS = {
     setup: `git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
-chmod +x aero-setup.sh aero-theme aero-power aero-webapp aero-hub
+chmod +x aero-setup.sh aero-theme aero-power aero-webapp aero-hub aero-browser
 sudo ./aero-setup.sh`,
     iso: `git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
@@ -68,6 +84,16 @@ sudo ./build-iso-wsl1.sh`,
     });
   });
 
+  document.querySelectorAll("[data-stage-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.stageMode;
+      document.querySelectorAll("[data-stage-mode]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      $("#stage-browser-view").hidden = mode !== "browser";
+      $("#stage-terminal-view").hidden = mode !== "terminal";
+    });
+  });
+
   document.querySelectorAll(".wb-ws").forEach((wsBtn) => {
     wsBtn.addEventListener("click", () => {
       document.querySelectorAll(".wb-ws").forEach((b) => b.classList.remove("active"));
@@ -92,15 +118,21 @@ sudo ./build-iso-wsl1.sh`,
     }, 3000);
   });
 
-  document.querySelectorAll("[data-perf]").forEach((btn) => {
+  document.querySelectorAll("[data-stack]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("[data-perf]").forEach((b) => {
+      document.querySelectorAll("[data-stack]").forEach((b) => {
         b.classList.remove("active");
         b.setAttribute("aria-selected", "false");
       });
       btn.classList.add("active");
       btn.setAttribute("aria-selected", "true");
-      $("#perf-code-view").textContent = PERF_SNIPPETS[btn.dataset.perf] || "";
+      const item = STACK_SNIPPETS[btn.dataset.stack];
+      if (item) {
+        $("#stack-visual-title").textContent = item.title;
+        $("#stack-visual-link").href = item.href;
+        $("#stack-visual-link").textContent = item.linkText;
+        $("#stack-visual-code").textContent = item.code;
+      }
     });
   });
 

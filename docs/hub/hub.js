@@ -63,6 +63,7 @@
     { keys: "Super + Return", label: "Launch Kitty Terminal" },
     { keys: "Super + Space", label: "Open Wofi App Launcher" },
     { keys: "Super + A", label: "Open AeroOS Control Hub" },
+    { keys: "Super + Shift + B", label: "Launch Aero Browser" },
     { keys: "Super + W", label: "Open WebApp Launcher Menu" },
     { keys: "Super + Shift + T", label: "Switch Desktop Theme" },
     { keys: "Super + Shift + P", label: "Session & Power Menu" },
