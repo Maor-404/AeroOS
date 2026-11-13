@@ -13,15 +13,15 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Dynamically discover the latest Ubuntu 24.04 point release ISO to prevent 404 errors
-echo "[+] Finding the latest Ubuntu 24.04 point release ISO..."
-ISO_NAME=$(curl -s https://releases.ubuntu.com/24.04/ | grep -oE 'ubuntu-24.04\.[0-9]+-live-server-amd64\.iso' | head -n 1)
-BASE_ISO_URL="https://releases.ubuntu.com/24.04/${ISO_NAME}"
+# Dynamically discover the latest Ubuntu 26.04 LTS point release ISO to prevent 404 errors
+echo "[+] Finding the latest Ubuntu 26.04 LTS point release ISO..."
+ISO_NAME=$(curl -fsSL https://releases.ubuntu.com/26.04/ | grep -oE 'ubuntu-26\.04(\.[0-9]+)?-live-server-amd64\.iso' | head -n 1)
+BASE_ISO_URL="https://releases.ubuntu.com/26.04/${ISO_NAME}"
 BUILD_DIR="/tmp/aeroos-build"
 ISO_MOUNT="${BUILD_DIR}/mount"
 ISO_FILES="${BUILD_DIR}/iso-files"
 CHROOT_DIR="${BUILD_DIR}/chroot"
-OUTPUT_ISO="aeroos-custom-24.04.iso"
+OUTPUT_ISO="aeroos-custom-26.04.iso"
 
 echo "[+] Preparing workspace..."
 mkdir -p "${BUILD_DIR}" "${ISO_MOUNT}" "${ISO_FILES}" "${CHROOT_DIR}"
@@ -113,7 +113,7 @@ mksquashfs "${CHROOT_DIR}" "${ISO_FILES}/casper/${SQUASHFS_NAME}" -comp xz
 # 9. Generate Custom Bootable ISO
 echo "[+] Creating custom bootable ISO via xorriso..."
 xorriso -as mkisofs -r \
-  -V "AeroOS_24_04" \
+  -V "AeroOS_26_04" \
   -o "${OUTPUT_ISO}" \
   -J -joliet-long -l \
   -b boot/grub/i386-pc/eltorito.img \

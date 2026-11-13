@@ -151,7 +151,7 @@
     if (!liveMode) {
       renderSystemSnapshot({
         hostname: "aeroos-preview",
-        os: "AeroOS 24.04 LTS (Sway Wayland)",
+        os: "AeroOS 26.04 LTS (Sway Wayland)",
         kernel: "6.8.0-generic",
         arch: "x86_64",
         uptime: "Preview",

@@ -1,6 +1,6 @@
 # AeroOS (Sway Wayland Edition)
 
-AeroOS transforms a minimal **Ubuntu 24.04 LTS** system into a fast, gaming-tuned **Sway Wayland** desktop featuring synchronized glassmorphism looks, a local WebEngine **Control Hub**, and a borderless **WebApp / PWA Manager**.
+AeroOS transforms a minimal **Ubuntu 26.04 LTS** system into a fast, gaming-tuned **Sway Wayland** desktop featuring synchronized glassmorphism looks, a local WebEngine **Control Hub**, and a borderless **WebApp / PWA Manager**.
 
 ## What's New
 
@@ -9,11 +9,15 @@ AeroOS transforms a minimal **Ubuntu 24.04 LTS** system into a fast, gaming-tune
   - **Nordic Frost**: Calm Polar Night & glacial cyan minimalism with arctic aurora wallpaper.
   - **Sonokai Obsidian**: Matte charcoal workspace with sage-emerald & ice-cyan accents.
   - **Nostalgia 9x**: Classic Windows 95 beveled taskbar and `#008080` teal styling.
-- **AeroOS Control Hub (`aero-hub`)**:
-  - Local loopback HTTP + REST backend paired with a frameless PyQt5 QtWebEngine / Chromium window (`docs/hub/`).
+- **AeroOS Control Hub (`aero-hub`, Go)**:
+  - Native Go loopback HTTP + REST backend paired with a frameless `aero-browser --app` / Chromium window (`docs/hub/`).
   - Live `/proc` CPU, memory/zRAM, disk, and `gamemoded` telemetry, visual theme studio, kernel sysctl inspector, and keyboard shortcut search (`Ctrl+K`).
-- **Borderless WebApps & PWAs (`aero-webapp`)**:
-  - Install any URL as an isolated desktop application with generated SVG icons and `.desktop` entries indexed by Wofi (`Super+W`).
+- **Aero Browser (`aero-browser`, C++17 + Qt5 WebEngine)**:
+  - Lightweight tabbed Wayland browser with `--app <url>` frameless mode for isolated web apps and the Control Hub.
+- **Borderless WebApps & PWAs (`aero-webapp`, Rust)**:
+  - Zero-dependency Rust CLI that installs any URL as an isolated desktop application with generated SVG icons and `.desktop` entries indexed by Wofi (`Super+W`).
+- **Minimal & Hardened Base (`Ubuntu 26.04 LTS`)**:
+  - `--no-install-recommends` package selection, `ufw` default-deny firewall, `unattended-upgrades`, curated lean utilities (`mpv`, `imv`, `ncdu`, `ripgrep`, `fzf`, `mangohud`), and build-time compiler cleanup.
 - **GitHub Pages Showcase (`docs/`)**:
   - Interactive live desktop preview and browser-playable Control Hub ready to deploy via GitHub Pages from `/docs`.
 
@@ -24,6 +28,7 @@ AeroOS transforms a minimal **Ubuntu 24.04 LTS** system into a fast, gaming-tune
 | `Super + Return` | Launch Kitty terminal |
 | `Super + Space` | Open Wofi application launcher |
 | `Super + A` | Open AeroOS Control Hub |
+| `Super + Shift + B` | Launch Aero Browser |
 | `Super + W` | Open WebApps launcher menu |
 | `Super + Shift + T` | Visual theme switcher |
 | `Super + Shift + P` | Session & power menu |
@@ -33,12 +38,12 @@ AeroOS transforms a minimal **Ubuntu 24.04 LTS** system into a fast, gaming-tune
 
 ## Quick Start
 
-### Convert an Existing Ubuntu 24.04 System
+### Convert an Existing Ubuntu 26.04 LTS System
 
 ```bash
 git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
-chmod +x aero-setup.sh aero-theme aero-power aero-webapp aero-hub
+chmod +x aero-setup.sh aero-theme aero-power
 sudo ./aero-setup.sh
 ```
 
@@ -59,7 +64,6 @@ sudo ./build-iso-wsl1.sh
 ### Preview the Web Showcase & Control Hub Locally
 
 ```bash
+make hub
 ./aero-hub --serve-only --port 8080
-# Or serve the full showcase + hub:
-python3 -m http.server 8080 --directory docs
 ```

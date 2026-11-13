@@ -49,7 +49,7 @@ aero-webapp launch excalidraw`,
   const INSTALL_SNIPPETS = {
     setup: `git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
-chmod +x aero-setup.sh aero-theme aero-power aero-webapp aero-hub aero-browser
+chmod +x aero-setup.sh aero-theme aero-power
 sudo ./aero-setup.sh`,
     iso: `git clone https://github.com/Maor-404/AeroOS.git
 cd AeroOS
