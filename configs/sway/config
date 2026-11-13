@@ -107,7 +107,7 @@ bindsym $mod+w exec aero-webapp menu
 bindsym $mod+Shift+t exec aero-theme --menu
 bindsym $mod+Shift+p exec aero-power
 bindsym $mod+Ctrl+l exec swaylock -C ~/.config/swaylock/config
-bindsym $mod+s exec /usr/local/bin/bauh
+bindsym $mod+s exec gnome-software
 bindsym $mod+i exec sudo calamares -d
 bindsym $mod+e exec thunar
 

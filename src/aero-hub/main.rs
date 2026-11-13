@@ -710,7 +710,7 @@ fn handle_client(mut stream: TcpStream, port: u16, dirs: ServerDirs) {
                 "open-files" => Some(vec!["thunar"]),
                 "open-aero-browser" => Some(vec![aero_browser.as_str()]),
                 "open-browser" => Some(vec!["brave-browser"]),
-                "open-app-center" => Some(vec!["/usr/local/bin/bauh"]),
+                "open-app-center" => Some(vec!["gnome-software"]),
                 "open-theme-menu" => Some(vec![aero_theme.as_str(), "--menu"]),
                 "open-power-menu" => Some(vec![aero_power.as_str()]),
                 "lock-screen" => Some(vec!["swaylock", "-C", swaylock_cfg.as_str()]),

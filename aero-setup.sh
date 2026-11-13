@@ -16,25 +16,69 @@ fi
 
 echo "[+] Starting AeroOS (Sway Wayland Edition) Installation..."
 
+export DEBIAN_FRONTEND=noninteractive
+CODENAME="$(. /etc/os-release && echo "${VERSION_CODENAME:-resolute}")"
+
+# True when running inside the ISO builder's chroot (never touch the host kernel/firewall there)
+in_chroot() {
+    command -v ischroot >/dev/null 2>&1 && ischroot
+}
+
+# Only add a third-party apt source if it actually publishes this Ubuntu release
+url_exists() {
+    curl -fsSI --max-time 20 "$1" >/dev/null 2>&1
+}
+
+# 0. Live ISO images ship a "file:/cdrom" source that does not exist once extracted.
+if grep -rqs 'cdrom' /etc/apt/sources.list /etc/apt/sources.list.d/; then
+    echo "[+] Removing live-ISO cdrom apt source and writing clean ${CODENAME} sources..."
+    sed -i '/cdrom/d' /etc/apt/sources.list 2>/dev/null || true
+    for f in /etc/apt/sources.list.d/*; do
+        if [ -f "$f" ] && grep -q 'cdrom' "$f"; then
+            rm -f "$f"
+        fi
+    done
+    cat > /etc/apt/sources.list.d/ubuntu.sources <<EOF
+Types: deb
+URIs: http://archive.ubuntu.com/ubuntu/
+Suites: ${CODENAME} ${CODENAME}-updates ${CODENAME}-backports
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.ubuntu.com/ubuntu/
+Suites: ${CODENAME}-security
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+fi
+
 # 1. Update and install base prerequisites
 echo "[+] Installing core prerequisites..."
 apt-get update
-apt-get install -y software-properties-common curl wget gpg apt-transport-https ca-certificates gnupg lsb-release
+apt-get install -y --no-install-recommends software-properties-common curl wget gpg apt-transport-https ca-certificates gnupg lsb-release debianutils
 
-# 2. Add Optimized Repositories
+# 2. Add Optimized Repositories (skipped automatically if not published for this release)
 echo "[+] Configuring PPA repositories for cutting-edge gaming drivers..."
-# Latest Mesa drivers for AMD/Intel graphics
-add-apt-repository -y ppa:kisak/kisak-mesa
-
-# Lutris PPA
-add-apt-repository -y ppa:lutris-team/lutris
+if url_exists "https://ppa.launchpadcontent.net/kisak/kisak-mesa/ubuntu/dists/${CODENAME}/Release"; then
+    add-apt-repository -y ppa:kisak/kisak-mesa
+else
+    echo "[!] kisak-mesa PPA not available for ${CODENAME}; using archive Mesa."
+fi
 
 # WineHQ Repository Setup
-echo "[+] Adding WineHQ repository..."
-mkdir -p /etc/apt/keyrings
-chmod 755 /etc/apt/keyrings
-wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-wget -NP /etc/apt/sources.list.d/ "https://dl.winehq.org/wine-builds/ubuntu/dists/$(lsb_release -cs)/winehq-$(lsb_release -cs).sources"
+WINEHQ_SOURCES="https://dl.winehq.org/wine-builds/ubuntu/dists/${CODENAME}/winehq-${CODENAME}.sources"
+WINE_PKG="wine"
+if url_exists "${WINEHQ_SOURCES}"; then
+    echo "[+] Adding WineHQ repository..."
+    mkdir -p /etc/apt/keyrings
+    chmod 755 /etc/apt/keyrings
+    wget -qO /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+    wget -qNP /etc/apt/sources.list.d/ "${WINEHQ_SOURCES}"
+    WINE_PKG="winehq-stable"
+else
+    echo "[!] WineHQ not available for ${CODENAME}; using archive Wine."
+fi
 
 # 3. Add External Repositories (Brave Browser, VS Code)
 echo "[+] Adding Brave Browser repository..."
@@ -77,11 +121,6 @@ apt-get install -y --no-install-recommends \
     wl-clipboard \
     pavucontrol \
     kitty \
-    libqt5widgets5 \
-    libqt5webenginewidgets5 \
-    python3-pip \
-    python3-pyqt5 \
-    python3-pyqt5.qtwebengine \
     sqlite3 \
     aria2 \
     calamares
@@ -122,21 +161,30 @@ echo "[+] Installing gaming prerequisites (Steam, Wine, Lutris, GameMode, MangoH
 dpkg --add-architecture i386
 apt-get update
 
-# Install Wine Stable, GameMode, MangoHud, and Lutris
+# Pre-accept the Steam license so the noninteractive install can't stall
+echo "steam steam/question select I AGREE" | debconf-set-selections
+echo "steam steam/license note ''" | debconf-set-selections
+echo "steam-installer steam/question select I AGREE" | debconf-set-selections
+echo "steam-installer steam/license note ''" | debconf-set-selections
+
+# Install Wine, GameMode, MangoHud, Lutris (Ubuntu archive) and Steam
 apt-get install -y --install-recommends \
-    winehq-stable \
+    "${WINE_PKG}" \
     winetricks \
     gamemode \
     libgamemode0:i386 \
     mangohud \
     lutris \
-    steam
+    steam-installer
 
 # 7. Apply System & Kernel Optimizations
 echo "[+] Deploying kernel tuning parameters..."
 if [ -f "./configs/99-aero-performance.conf" ]; then
     cp ./configs/99-aero-performance.conf /etc/sysctl.d/
-    sysctl --system || true
+    # Inside the ISO chroot this would retune the *build host* kernel; it applies on first boot instead.
+    if ! in_chroot; then
+        sysctl --system || true
+    fi
 else
     echo "[!] Warning: configs/99-aero-performance.conf not found. Skipping sysctl copy."
 fi
@@ -209,6 +257,10 @@ g++ -O2 -std=c++17 -fPIC src/aero-browser/main.cpp -o /usr/local/bin/aero-browse
     $(pkg-config --cflags --libs Qt5Widgets Qt5WebEngineWidgets)
 chmod 755 /usr/local/bin/aero-hub /usr/local/bin/aero-webapp /usr/local/bin/aero-browser
 
+# Pin the shared libraries aero-browser links against so purging the -dev packages keeps them
+ldd /usr/local/bin/aero-browser | awk '/=> \// {print $3}' | xargs -r realpath \
+    | xargs -r dpkg -S 2>/dev/null | cut -d: -f1 | sort -u | xargs -r apt-mark manual || true
+
 echo "[+] Deploying shell utilities (aero-theme, aero-power)..."
 for tool in aero-theme aero-power; do
     if [ -f "./${tool}" ]; then
@@ -217,11 +269,12 @@ for tool in aero-theme aero-power; do
     fi
 done
 
-# Install Bauh App Store via pip3
-echo "[+] Installing Bauh Universal App Store..."
-pip3 install --no-cache-dir bauh --break-system-packages
+# App Center: native GNOME Software with Flatpak/Flathub (no pip / Python runtime needed)
+echo "[+] Installing App Center (GNOME Software + Flathub)..."
+apt-get install -y --no-install-recommends gnome-software gnome-software-plugin-flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
 
-for desktop_file in bauh.desktop aero-hub.desktop aero-theme.desktop aero-webapp.desktop aero-browser.desktop; do
+for desktop_file in aero-hub.desktop aero-theme.desktop aero-webapp.desktop aero-browser.desktop; do
     if [ -f "./${desktop_file}" ]; then
         cp "./${desktop_file}" "/usr/share/applications/${desktop_file}"
     fi
@@ -252,7 +305,12 @@ echo "[+] Hardening system security (UFW default-deny + unattended-upgrades)..."
 ufw default deny incoming || true
 ufw default allow outgoing || true
 ufw limit ssh || true
-ufw --force enable || true
+if in_chroot; then
+    # Don't load iptables rules into the build host; just enable UFW for first boot.
+    sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf || true
+else
+    ufw --force enable || true
+fi
 systemctl enable ufw || true
 systemctl enable unattended-upgrades || true
 
