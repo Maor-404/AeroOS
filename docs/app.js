@@ -210,4 +210,181 @@ sudo ./build-iso-wsl1.sh`,
       btn.textContent = "Select & Copy";
     }
   });
+
+  // Live Desktop Customizer Studio
+  const CUST_KEY = "aeroos-customizer-v1";
+  const DEFAULT_CUST = {
+    accent: "#38bdf8",
+    blur: 14,
+    opacity: 62,
+    radius: 18,
+    waybar: "top",
+    wallpaper: "",
+  };
+  let custState = { ...DEFAULT_CUST };
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUST_KEY) || "null");
+    if (saved && typeof saved === "object") custState = { ...DEFAULT_CUST, ...saved };
+  } catch { /* ignore */ }
+
+  function renderCustomizer() {
+    const root = document.documentElement.style;
+    root.setProperty("--accent", custState.accent);
+    root.setProperty("--glass-blur", `${custState.blur}px`);
+    root.setProperty("--radius", `${custState.radius}px`);
+    root.setProperty("--surface", `rgba(9, 23, 38, ${(custState.opacity / 100).toFixed(2)})`);
+    if (custState.wallpaper) {
+      root.setProperty("--wallpaper", `url("${custState.wallpaper}")`);
+    } else {
+      root.removeProperty("--wallpaper");
+    }
+
+    const screen = $("#desktop-screen");
+    if (screen) screen.classList.toggle("waybar-bottom", custState.waybar === "bottom");
+
+    $("#cust-accent-val").textContent = custState.accent;
+    $("#cust-accent-picker").value = custState.accent;
+    $("#cust-blur").value = custState.blur;
+    $("#cust-blur-val").textContent = `${custState.blur}px`;
+    $("#cust-opacity").value = custState.opacity;
+    $("#cust-opacity-val").textContent = `${custState.opacity}%`;
+    $("#cust-radius").value = custState.radius;
+    $("#cust-radius-val").textContent = `${custState.radius}px`;
+    $("#cust-waybar-val").textContent = custState.waybar === "bottom" ? "Bottom" : "Top";
+    $("#cust-wb-top").classList.toggle("active", custState.waybar === "top");
+    $("#cust-wb-bottom").classList.toggle("active", custState.waybar === "bottom");
+
+    document.querySelectorAll("#cust-swatches .swatch-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.color.toLowerCase() === custState.accent.toLowerCase());
+    });
+
+    const themeJson = {
+      id: "custom-studio",
+      name: "Aero Custom Studio",
+      tagline: "Crafted live in the AeroOS Web Customizer",
+      mode: custState.blur > 0 ? "glass" : "solid",
+      accent: custState.accent,
+      glassBlurPx: Number(custState.blur),
+      panelOpacity: Number((custState.opacity / 100).toFixed(2)),
+      cornerRadiusPx: Number(custState.radius),
+      waybarPosition: custState.waybar,
+    };
+    $("#cust-json-preview").textContent = JSON.stringify(themeJson, null, 2);
+    try {
+      localStorage.setItem(CUST_KEY, JSON.stringify(custState));
+    } catch { /* ignore quota */ }
+  }
+
+  document.querySelectorAll("#cust-swatches .swatch-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      custState.accent = btn.dataset.color;
+      renderCustomizer();
+    });
+  });
+
+  $("#cust-accent-picker").addEventListener("input", (e) => {
+    custState.accent = e.target.value;
+    renderCustomizer();
+  });
+
+  $("#cust-blur").addEventListener("input", (e) => {
+    custState.blur = Number(e.target.value);
+    renderCustomizer();
+  });
+
+  $("#cust-opacity").addEventListener("input", (e) => {
+    custState.opacity = Number(e.target.value);
+    renderCustomizer();
+  });
+
+  $("#cust-radius").addEventListener("input", (e) => {
+    custState.radius = Number(e.target.value);
+    renderCustomizer();
+  });
+
+  ["#cust-wb-top", "#cust-wb-bottom"].forEach((sel) => {
+    $(sel).addEventListener("click", (e) => {
+      custState.waybar = e.currentTarget.dataset.waybar;
+      renderCustomizer();
+    });
+  });
+
+  $("#cust-wallpaper-upload").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      custState.wallpaper = String(reader.result || "");
+      renderCustomizer();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $("#cust-reset-btn").addEventListener("click", () => {
+    custState = { ...DEFAULT_CUST };
+    localStorage.removeItem(CUST_KEY);
+    renderCustomizer();
+  });
+
+  $("#cust-download-json").addEventListener("click", () => {
+    const blob = new Blob([$("#cust-json-preview").textContent], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "theme.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $("#cust-copy-json").addEventListener("click", async () => {
+    const btn = $("#cust-copy-json");
+    try {
+      await navigator.clipboard.writeText($("#cust-json-preview").textContent);
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = "Copy JSON"; }, 1500);
+    } catch {
+      btn.textContent = "Select & Copy";
+    }
+  });
+
+  renderCustomizer();
+
+  // Interactive Kitty Terminal in Desktop Stage
+  const termForm = $("#mock-terminal-form");
+  const termInput = $("#mock-terminal-input");
+  const termOut = $("#mock-terminal-output code");
+  if (termForm && termInput && termOut) {
+    termForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = termInput.value.trim();
+      if (!raw) return;
+      termInput.value = "";
+      if (raw === "clear") {
+        termOut.textContent = "";
+        return;
+      }
+      let reply = "";
+      if (raw === "help") {
+        reply = "Commands: help, fastfetch, uname -a, aero-theme <aero|nordic|sonokai|nostalgia9x>, aero-webapp list, clear";
+      } else if (raw === "fastfetch") {
+        reply = `OS: AeroOS 26.04 LTS (Sway Wayland)\nKernel: Linux 6.14 · UFW Active · zRAM\nStack: Rust (aero-hub, aero-webapp) + C++17 (aero-browser)\nAccent: ${custState.accent} · Blur: ${custState.blur}px`;
+      } else if (raw === "uname -a") {
+        reply = "Linux aeroos 6.14.0-generic #1 SMP PREEMPT_DYNAMIC x86_64 GNU/Linux";
+      } else if (raw === "aero-webapp list") {
+        reply = "Installed: GitHub, Excalidraw, DuckDuckGo (via Rust aero-webapp)";
+      } else if (raw.startsWith("aero-theme ")) {
+        const t = raw.split(/\s+/)[1];
+        if (THEME_LABELS[t]) {
+          setPreviewTheme(t);
+          reply = `[+] Switched theme to ${THEME_LABELS[t].title}`;
+        } else {
+          reply = `[-] Unknown theme '${t}'. Try: aero, nordic, sonokai, nostalgia9x`;
+        }
+      } else {
+        reply = `zsh: command simulated — type "help" for built-in AeroOS commands`;
+      }
+      termOut.textContent += `\nmaor@aeroos:~$ ${raw}\n${reply}`;
+      const pre = $("#mock-terminal-output");
+      pre.scrollTop = pre.scrollHeight;
+    });
+  }
 })();

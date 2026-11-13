@@ -135,16 +135,18 @@
                   <span>kitty — ~/.config/sway</span>
                   <span class="mock-dots">● ● ●</span>
                 </div>
-                <pre class="mock-code"><code><span class="t-accent">maor@aeroos</span>:~$ aero-theme --list
+                <pre class="mock-code" id="mock-terminal-output"><code><span class="t-accent">maor@aeroos</span>:~$ aero-theme --list
 * aero         (Aero Glass — Active)
   nordic       (Nordic Frost)
   sonokai      (Sonokai Obsidian)
   nostalgia9x  (Classic 9x)
 
-<span class="t-accent">maor@aeroos</span>:~$ aero-browser https://github.com &amp;
-<span class="t-accent">maor@aeroos</span>:~$ aero-webapp install \
-  --name "Excalidraw" --url https://excalidraw.com
-[+] Desktop entry ready in Wofi!</code></pre>
+<span class="t-accent">maor@aeroos</span>:~$ aero-webapp install --name "Excalidraw" --url https://excalidraw.com
+[+] Desktop entry ready in Wofi! Type "help" below to try commands.</code></pre>
+                <form class="term-input-row" id="mock-terminal-form">
+                  <span class="t-accent">maor@aeroos:~$</span>
+                  <input type="text" id="mock-terminal-input" class="term-input" placeholder="Try: fastfetch, aero-theme nordic, help..." autocomplete="off" aria-label="Simulated Kitty terminal command input">
+                </form>
               </div>
 
               <div class="mock-hub-card">
@@ -183,6 +185,69 @@
       </div>
     </section>
 
+    <section id="customizer" class="section section-tinted">
+      <div class="container">
+        <div class="section-head" style="margin-bottom: 24px;">
+          <span class="eyebrow">Live Desktop Studio</span>
+          <h2>Customize every pixel, glass layer, and config live.</h2>
+          <p class="muted-copy">Tune your AeroOS accent, blur, opacity, corner radius, Waybar dock, and wallpaper in real time—then export a ready-to-use <code>theme.json</code>.</p>
+        </div>
+
+        <div class="customizer-grid">
+          <div class="customizer-panel">
+            <div class="ctrl-group">
+              <div class="ctrl-header"><span>Accent Color</span><span id="cust-accent-val">#38bdf8</span></div>
+              <div class="swatch-row" id="cust-swatches">
+                <button type="button" class="swatch-btn active" data-color="#38bdf8" style="background:#38bdf8" aria-label="Glacial Cyan"></button>
+                <button type="button" class="swatch-btn" data-color="#34d399" style="background:#34d399" aria-label="Emerald"></button>
+                <button type="button" class="swatch-btn" data-color="#a78bfa" style="background:#a78bfa" aria-label="Violet"></button>
+                <button type="button" class="swatch-btn" data-color="#fb7185" style="background:#fb7185" aria-label="Rose"></button>
+                <button type="button" class="swatch-btn" data-color="#fbbf24" style="background:#fbbf24" aria-label="Amber"></button>
+                <button type="button" class="swatch-btn" data-color="#88c0d0" style="background:#88c0d0" aria-label="Nordic Frost"></button>
+                <input type="color" id="cust-accent-picker" class="color-picker-input" value="#38bdf8" aria-label="Custom accent color picker">
+              </div>
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-header"><span>Glass Blur</span><span id="cust-blur-val">14px</span></div>
+              <input type="range" id="cust-blur" class="ctrl-range" min="0" max="28" value="14">
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-header"><span>Panel Opacity</span><span id="cust-opacity-val">62%</span></div>
+              <input type="range" id="cust-opacity" class="ctrl-range" min="25" max="92" value="62">
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-header"><span>Corner Radius</span><span id="cust-radius-val">18px</span></div>
+              <input type="range" id="cust-radius" class="ctrl-range" min="0" max="26" value="18">
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-header"><span>Waybar Position &amp; Wallpaper</span><span id="cust-waybar-val">Top</span></div>
+              <div class="ctrl-btn-row">
+                <button type="button" id="cust-wb-top" class="perf-tab active" data-waybar="top">Top Bar</button>
+                <button type="button" id="cust-wb-bottom" class="perf-tab" data-waybar="bottom">Bottom Dock</button>
+                <label class="file-upload-label">
+                  Upload Wallpaper
+                  <input type="file" id="cust-wallpaper-upload" accept="image/*">
+                </label>
+                <button type="button" id="cust-reset-btn" class="perf-tab">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-panel">
+            <pre><code id="cust-json-preview"></code></pre>
+            <div class="hero-actions" style="margin-top: 12px;">
+              <button type="button" id="cust-download-json" class="btn btn-primary">Download theme.json</button>
+              <button type="button" id="cust-copy-json" class="btn btn-glass">Copy JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="web-stack" class="section">
       <div class="container">
         <div class="editorial-row">
@@ -190,7 +255,7 @@
             <span class="eyebrow">Native Web Stack</span>
             <h2>Three focused tools, zero browser bloat.</h2>
             <p>
-              Instead of shipping heavy Electron shells, AeroOS pairs a lean PyQt5 QtWebEngine runtime with Brave app-mode isolation so web tools launch fast and stay clean.
+              Instead of shipping heavy Electron shells, AeroOS pairs a C++17 Qt5 WebEngine runtime with zero-dependency Rust backends so web tools launch fast and stay clean.
             </p>
             <div class="stack-selector" role="tablist" aria-label="AeroOS web tools">
               <button type="button" id="stack-btn-browser" class="stack-item active" role="tab" aria-selected="true" data-stack="browser">
