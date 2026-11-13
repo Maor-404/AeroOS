@@ -26,5 +26,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aeroos-custom-iso
-          path: aeroos-custom-24.04.iso
+          path: aeroos-custom-26.04.iso
           compression-level: 0 # Don't re-compress the already compressed ISO file

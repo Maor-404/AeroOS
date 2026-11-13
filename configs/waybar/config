@@ -1,76 +1,118 @@
 {
     "layer": "top",
     "position": "top",
-    "height": 32,
+    "height": 36,
+    "margin-top": 6,
+    "margin-left": 10,
+    "margin-right": 10,
     "spacing": 4,
-    "modules-left": ["sway/workspaces", "sway/mode"],
+    "modules-left": ["custom/launcher", "sway/workspaces", "sway/mode", "sway/window"],
     "modules-center": ["clock"],
-    "modules-right": ["pulseaudio", "network", "cpu", "memory", "temperature", "battery", "tray"],
-    
+    "modules-right": ["custom/gamemode", "custom/theme", "pulseaudio", "network", "cpu", "memory", "temperature", "battery", "tray", "custom/power"],
+
+    "custom/launcher": {
+        "format": "◈ Aero",
+        "tooltip-format": "Left click: App Launcher (Super+Space)\nRight click: AeroOS Control Hub (Super+A)",
+        "on-click": "wofi --show drun --prompt 'Launch Application...' --allow-images",
+        "on-click-right": "aero-hub"
+    },
+
     "sway/workspaces": {
         "disable-scroll": true,
         "all-outputs": true,
         "format": "{name}"
     },
-    
-    "tray": {
-        "icon-size": 18,
-        "spacing": 10
-    },
-    
-    "clock": {
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        "format-alt": "{:%Y-%m-%d}"
-    },
-    
-    "cpu": {
-        "format": " {usage}%",
+
+    "sway/window": {
+        "max-length": 36,
         "tooltip": false
     },
-    
-    "memory": {
-        "format": " {}%"
+
+    "clock": {
+        "format": "{:%a %b %d  %H:%M}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "format-alt": "{:%Y-%m-%d %H:%M:%S}"
     },
-    
+
+    "custom/theme": {
+        "exec": "aero-theme --current 2>/dev/null || echo 'aero'",
+        "interval": 5,
+        "format": "◐ {}",
+        "tooltip-format": "Active theme: {} (Click to switch)",
+        "on-click": "aero-theme --menu",
+        "on-click-right": "aero-hub --tab themes"
+    },
+
+    "custom/gamemode": {
+        "exec": "if command -v gamemoded >/dev/null 2>&1 && gamemoded -s 2>/dev/null | grep -qi 'active'; then echo '{\"text\":\"⚡ GameMode\",\"class\":\"active\",\"tooltip\":\"GameMode performance profile active\"}'; else echo ''; fi",
+        "return-type": "json",
+        "interval": 5,
+        "on-click": "aero-hub --tab performance"
+    },
+
+    "tray": {
+        "icon-size": 16,
+        "spacing": 8
+    },
+
+    "cpu": {
+        "format": " {usage}%",
+        "tooltip": true,
+        "on-click": "kitty -e btop"
+    },
+
+    "memory": {
+        "format": " {percentage}%",
+        "tooltip-format": "RAM: {used:0.1f}G / {total:0.1f}G",
+        "on-click": "kitty -e btop"
+    },
+
     "temperature": {
         "critical-threshold": 80,
         "format": " {temperatureC}°C"
     },
-    
+
     "battery": {
         "states": {
             "warning": 30,
             "critical": 15
         },
         "format": "{icon} {capacity}%",
-        "format-charging": " {capacity}%",
+        "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-alt": "{time} {icon}",
         "format-icons": ["", "", "", "", ""]
     },
-    
+
     "network": {
         "format-wifi": " {essid} ({signalStrength}%)",
-        "format-ethernet": " {ipaddr}/{cidr}",
-        "tooltip-format": " {ifname} via {gwaddr}",
-        "format-linked": " {ifname} (No IP)",
-        "format-disconnected": "⚠ Disconnected",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}"
+        "format-ethernet": " {ipaddr}",
+        "tooltip-format": "{ifname}: {ipaddr}/{cidr} via {gwaddr}",
+        "format-linked": " {ifname} (No IP)",
+        "format-disconnected": "⚠ Offline",
+        "format-alt": "{ifname}: {ipaddr}/{cidr}",
+        "on-click": "nm-connection-editor"
     },
-    
+
     "pulseaudio": {
         "format": "{icon} {volume}%",
         "format-bluetooth": " {icon} {volume}%",
-        "format-muted": " Muted",
+        "format-muted": " Muted",
         "format-icons": {
             "headphone": "",
-            "hands-free": "",
-            "headset": "",
+            "hands-free": "",
+            "headset": "",
             "phone": "",
             "portable": "",
             "car": "",
             "default": ["", "", ""]
         },
         "on-click": "pavucontrol"
+    },
+
+    "custom/power": {
+        "format": "⏻",
+        "tooltip-format": "Session & Power Menu (Super+Shift+P)",
+        "on-click": "aero-power"
     }
 }

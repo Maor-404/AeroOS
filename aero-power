@@ -1,0 +1,46 @@
+#!/bin/bash
+# ==============================================================================
+# AeroOS Session & Power Menu
+# Description: Sleek Wofi-based Lock, Suspend, Logout, Reboot, and Poweroff menu.
+# ==============================================================================
+
+set -euo pipefail
+
+OPTIONS="Lock Screen\nSuspend\nLog Out (Exit Sway)\nReboot\nShut Down"
+
+if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wofi >/dev/null 2>&1; then
+    CHOICE=$(printf "%b" "${OPTIONS}" | wofi --dmenu --prompt "AeroOS Session..." --lines 6) || exit 0
+else
+    echo "AeroOS Session Menu:"
+    echo "1) Lock Screen  2) Suspend  3) Log Out  4) Reboot  5) Shut Down"
+    read -rp "Choose [1-5]: " num
+    case "${num}" in
+        1) CHOICE="Lock Screen" ;;
+        2) CHOICE="Suspend" ;;
+        3) CHOICE="Log Out (Exit Sway)" ;;
+        4) CHOICE="Reboot" ;;
+        5) CHOICE="Shut Down" ;;
+        *) exit 0 ;;
+    esac
+fi
+
+case "${CHOICE}" in
+    "Lock Screen")
+        swaylock -C "${HOME}/.config/swaylock/config"
+        ;;
+    "Suspend")
+        systemctl suspend
+        ;;
+    "Log Out (Exit Sway)")
+        swaymsg exit
+        ;;
+    "Reboot")
+        systemctl reboot
+        ;;
+    "Shut Down")
+        systemctl poweroff
+        ;;
+    *)
+        exit 0
+        ;;
+esac

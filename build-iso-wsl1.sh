@@ -7,19 +7,19 @@
 
 set -euo pipefail
 
-# Dynamically discover the latest Ubuntu 24.04 point release ISO to prevent 404 errors
-echo "[+] Finding the latest Ubuntu 24.04 point release ISO..."
-ISO_NAME=$(curl -s https://releases.ubuntu.com/24.04/ | grep -oE 'ubuntu-24.04\.[0-9]+-live-server-amd64\.iso' | head -n 1)
-BASE_ISO_URL="https://releases.ubuntu.com/24.04/${ISO_NAME}"
+# Dynamically discover the latest Ubuntu 26.04 LTS point release ISO to prevent 404 errors
+echo "[+] Finding the latest Ubuntu 26.04 LTS point release ISO..."
+ISO_NAME=$(curl -fsSL https://releases.ubuntu.com/26.04/ | grep -oE 'ubuntu-26\.04(\.[0-9]+)?-live-server-amd64\.iso' | head -n 1)
+BASE_ISO_URL="https://releases.ubuntu.com/26.04/${ISO_NAME}"
 BUILD_DIR="/tmp/aeroos-build"
 ISO_FILES="${BUILD_DIR}/iso-files"
 CHROOT_DIR="${BUILD_DIR}/chroot"
-OUTPUT_ISO="aeroos-custom-24.04.iso"
+OUTPUT_ISO="aeroos-custom-26.04.iso"
 
 # Check dependencies
-for cmd in 7z proot mksquashfs xorriso wget rsync curl; do
+for cmd in 7z mksquashfs xorriso wget rsync curl; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full proot squashfs-tools xorriso wget rsync curl"
+        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full squashfs-tools xorriso wget rsync curl"
         exit 1
     fi
 done
@@ -65,12 +65,15 @@ echo "[+] Detected root squashfs: ${SQUASHFS_NAME}"
 
 unsquashfs -d "${CHROOT_DIR}" "${SQUASHFS_PATH}"
 
-# 4. Copy AeroOS installation scripts into the chroot
-echo "[+] Copying customization scripts into chroot..."
+# 4. Copy AeroOS installation scripts and assets into the chroot
+echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
-cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
-cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
-chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
+cp -r ./configs ./docs ./src "${CHROOT_DIR}/opt/aeroos/"
+cp ./go.mod ./Makefile ./aero-setup.sh ./aero-theme ./aero-power "${CHROOT_DIR}/opt/aeroos/"
+cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
+chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
+         "${CHROOT_DIR}/opt/aeroos/aero-theme" \
+         "${CHROOT_DIR}/opt/aeroos/aero-power"
 
 # 5. Bind mount device filesystems for Chroot
 echo "[+] Setting up chroot virtual mounts..."
@@ -109,7 +112,7 @@ mksquashfs "${CHROOT_DIR}" "${ISO_FILES}/casper/${SQUASHFS_NAME}" -comp xz
 # 7. Generate Custom Bootable ISO
 echo "[+] Creating custom bootable ISO via xorriso..."
 xorriso -as mkisofs -r \
-  -V "AeroOS_24_04" \
+  -V "AeroOS_26_04" \
   -o "${OUTPUT_ISO}" \
   -J -joliet-long -l \
   -b boot/grub/i386-pc/eltorito.img \

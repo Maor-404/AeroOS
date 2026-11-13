@@ -1,0 +1,54 @@
+window {
+    margin: 0px;
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    border-radius: 16px;
+    background-color: rgba(8, 21, 35, 0.88);
+    font-family: "Inter", "Outfit", sans-serif;
+    font-size: 14px;
+    color: #f0f9ff;
+}
+
+#outer-box {
+    margin: 10px;
+    padding: 4px;
+    background-color: transparent;
+}
+
+#input {
+    margin: 6px 6px 12px 6px;
+    padding: 10px 14px;
+    border: 1px solid rgba(186, 230, 253, 0.22);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f0f9ff;
+}
+
+#input:focus {
+    border: 1px solid #38bdf8;
+    background-color: rgba(56, 189, 248, 0.12);
+}
+
+#scroll {
+    margin: 0 4px;
+}
+
+#entry {
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: 10px;
+    color: #dbeafe;
+}
+
+#entry:selected {
+    background-color: rgba(56, 189, 248, 0.26);
+    border: 1px solid rgba(125, 211, 252, 0.4);
+    color: #ffffff;
+}
+
+#img {
+    margin-right: 10px;
+}
+
+#text {
+    margin-left: 4px;
+}

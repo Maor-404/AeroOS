@@ -13,15 +13,15 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Dynamically discover the latest Ubuntu 24.04 point release ISO to prevent 404 errors
-echo "[+] Finding the latest Ubuntu 24.04 point release ISO..."
-ISO_NAME=$(curl -s https://releases.ubuntu.com/24.04/ | grep -oE 'ubuntu-24.04\.[0-9]+-live-server-amd64\.iso' | head -n 1)
-BASE_ISO_URL="https://releases.ubuntu.com/24.04/${ISO_NAME}"
+# Dynamically discover the latest Ubuntu 26.04 LTS point release ISO to prevent 404 errors
+echo "[+] Finding the latest Ubuntu 26.04 LTS point release ISO..."
+ISO_NAME=$(curl -fsSL https://releases.ubuntu.com/26.04/ | grep -oE 'ubuntu-26\.04(\.[0-9]+)?-live-server-amd64\.iso' | head -n 1)
+BASE_ISO_URL="https://releases.ubuntu.com/26.04/${ISO_NAME}"
 BUILD_DIR="/tmp/aeroos-build"
 ISO_MOUNT="${BUILD_DIR}/mount"
 ISO_FILES="${BUILD_DIR}/iso-files"
 CHROOT_DIR="${BUILD_DIR}/chroot"
-OUTPUT_ISO="aeroos-custom-24.04.iso"
+OUTPUT_ISO="aeroos-custom-26.04.iso"
 
 echo "[+] Preparing workspace..."
 mkdir -p "${BUILD_DIR}" "${ISO_MOUNT}" "${ISO_FILES}" "${CHROOT_DIR}"
@@ -79,12 +79,15 @@ mount -t tmpfs tmpfs "${CHROOT_DIR}/tmp"
 rm -f "${CHROOT_DIR}/etc/resolv.conf" || true
 echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 
-# 5. Copy AeroOS installation scripts into the chroot
-echo "[+] Copying customization scripts into chroot..."
+# 5. Copy AeroOS installation scripts and assets into the chroot
+echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
-cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
-cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
-chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
+cp -r ./configs ./docs ./src "${CHROOT_DIR}/opt/aeroos/"
+cp ./go.mod ./Makefile ./aero-setup.sh ./aero-theme ./aero-power "${CHROOT_DIR}/opt/aeroos/"
+cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
+chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
+         "${CHROOT_DIR}/opt/aeroos/aero-theme" \
+         "${CHROOT_DIR}/opt/aeroos/aero-power"
 
 # 6. Execute aero-setup.sh in Chroot
 echo "[+] Executing customization script inside the chroot environment..."
@@ -110,7 +113,7 @@ mksquashfs "${CHROOT_DIR}" "${ISO_FILES}/casper/${SQUASHFS_NAME}" -comp xz
 # 9. Generate Custom Bootable ISO
 echo "[+] Creating custom bootable ISO via xorriso..."
 xorriso -as mkisofs -r \
-  -V "AeroOS_24_04" \
+  -V "AeroOS_26_04" \
   -o "${OUTPUT_ISO}" \
   -J -joliet-long -l \
   -b boot/grub/i386-pc/eltorito.img \

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="aeroGrad" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="55%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+    <linearGradient id="aeroGlass" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#E0F2FE" stop-opacity="0.14"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#081624"/>
+  <rect x="4.75" y="4.75" width="54.5" height="54.5" rx="15.25" stroke="url(#aeroGrad)" stroke-opacity="0.45" stroke-width="1.5"/>
+  <path d="M32 13L50 48H41.5L32 29.2L22.5 48H14L32 13Z" fill="url(#aeroGrad)"/>
+  <path d="M23.5 39.5C28.5 36.2 35.5 36.2 40.5 39.5L43 44.2C36.8 40.6 27.2 40.6 21 44.2L23.5 39.5Z" fill="url(#aeroGlass)"/>
+</svg>

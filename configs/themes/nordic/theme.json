@@ -1,0 +1,20 @@
+{
+  "id": "nordic",
+  "name": "Nordic Frost",
+  "tagline": "Calm arctic minimalism with slate polar night and glacial cyan",
+  "mode": "dark",
+  "wallpaper": "nordic-frost.jpg",
+  "gtkTheme": "Nordic",
+  "iconTheme": "Papirus",
+  "swatches": ["#2e3440", "#3b4252", "#88c0d0", "#8fbcbb", "#eceff4"],
+  "tokens": {
+    "bg": "#1e242e",
+    "surface": "rgba(46, 52, 64, 0.80)",
+    "surfaceStrong": "rgba(59, 66, 82, 0.92)",
+    "border": "rgba(136, 192, 208, 0.22)",
+    "accent": "#88c0d0",
+    "accentAlt": "#8fbcbb",
+    "text": "#eceff4",
+    "muted": "#9aa8be"
+  }
+}

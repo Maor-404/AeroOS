@@ -1,6 +1,7 @@
-# Sonokai Theme Config for Sway
-output * bg #2c2e34 solid
-client.focused          #7ec7a2 #7ec7a2 #181819 #76cce0 #7ec7a2
-client.focused_inactive #3d424d #3d424d #e2e2e3 #3d424d #3d424d
-client.unfocused        #2c2e34 #2c2e34 #e2e2e3 #2c2e34 #2c2e34
-client.urgent           #f3a96a #f3a96a #e2e2e3 #f3a96a #f3a96a
+# Sonokai Obsidian Theme Config for Sway
+output * bg /usr/share/aeroos/wallpapers/sonokai-obsidian.jpg fill
+
+client.focused          #7ec7a2 #24262b #ededee #76cce0 #7ec7a2
+client.focused_inactive #3d424d #24262b #b8bcc4 #3d424d #3d424d
+client.unfocused        #2c2e34 #1c1d22 #888d96 #2c2e34 #2c2e34
+client.urgent           #f87171 #7f1d1d #ededee #f87171 #f87171

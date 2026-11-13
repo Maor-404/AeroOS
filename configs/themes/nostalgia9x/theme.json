@@ -1,0 +1,20 @@
+{
+  "id": "nostalgia9x",
+  "name": "Nostalgia 9x",
+  "tagline": "Classic Windows 95 beveled silver UI & iconic #008080 teal desktop",
+  "mode": "retro",
+  "wallpaper": "solid:#008080",
+  "gtkTheme": "Chicago95",
+  "iconTheme": "Chicago95",
+  "swatches": ["#008080", "#c0c0c0", "#dfdfdf", "#000080", "#000000"],
+  "tokens": {
+    "bg": "#008080",
+    "surface": "#c0c0c0",
+    "surfaceStrong": "#dfdfdf",
+    "border": "#808080",
+    "accent": "#000080",
+    "accentAlt": "#008080",
+    "text": "#000000",
+    "muted": "#404040"
+  }
+}

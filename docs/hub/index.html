@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aero">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroOS Control Hub — System, Themes &amp; WebApps</title>
+  <meta name="description" content="Manage AeroOS Wayland themes, live system performance telemetry, keyboard shortcuts, and borderless WebApps.">
+  <link rel="icon" type="image/svg+xml" href="../assets/aero-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="hub.css">
+</head>
+<body>
+  <div class="wallpaper-backdrop" aria-hidden="true"></div>
+  <div class="wallpaper-scrim" aria-hidden="true"></div>
+
+  <div class="hub-shell">
+    <aside class="hub-sidebar" aria-label="Control Hub navigation">
+      <div class="brand-row">
+        <img src="../assets/aero-logo.svg" alt="AeroOS Emblem" class="brand-logo" width="36" height="36">
+        <div class="brand-copy">
+          <span class="brand-name">AeroOS</span>
+          <span class="brand-edition">Control Hub</span>
+        </div>
+      </div>
+
+      <button type="button" id="hub-command-trigger" class="command-trigger" aria-label="Open quick search">
+        <span>Quick Search...</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      <nav class="nav-list" role="tablist" aria-label="Hub sections">
+        <button type="button" id="nav-overview" class="nav-item active" role="tab" aria-selected="true" data-tab="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+          <span>Overview</span>
+        </button>
+        <button type="button" id="nav-themes" class="nav-item" role="tab" aria-selected="false" data-tab="themes">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18V3z" fill="currentColor" opacity="0.28"/></svg>
+          <span>Themes &amp; Look</span>
+        </button>
+        <button type="button" id="nav-webapps" class="nav-item" role="tab" aria-selected="false" data-tab="webapps">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="7" cy="6.5" r="0.8" fill="currentColor"/><circle cx="10" cy="6.5" r="0.8" fill="currentColor"/></svg>
+          <span>WebApps &amp; PWAs</span>
+        </button>
+        <button type="button" id="nav-performance" class="nav-item" role="tab" aria-selected="false" data-tab="performance">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+          <span>Tuning &amp; Keys</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="mode-status" id="hub-mode-status">
+          <span class="status-label">Session Mode</span>
+          <strong id="hub-mode-value">Detecting...</strong>
+        </div>
+        <a href="../index.html" id="back-to-showcase" class="footer-link">← AeroOS Showcase</a>
+      </div>
+    </aside>
+
+    <main class="hub-main">
+      <header class="hub-header">
+        <div>
+          <h1 id="hub-page-title">AeroOS Control Hub</h1>
+          <p id="hub-page-subtitle" class="hub-subtitle">Wayland desktop status, visual presets, and borderless web applications.</p>
+        </div>
+        <div class="header-actions">
+          <span class="active-theme-tag">Theme: <strong id="header-active-theme">Aero Glass</strong></span>
+          <button type="button" id="refresh-telemetry-btn" class="btn btn-secondary">Refresh</button>
+        </div>
+      </header>
+
+      <!-- TAB 1: OVERVIEW -->
+      <section id="tab-overview" class="tab-panel active" role="tabpanel" aria-labelledby="nav-overview">
+        <div class="metrics-strip">
+          <article class="glass-panel metric-card">
+            <span class="metric-label">Processor Load</span>
+            <strong class="metric-value" id="stat-cpu">--%</strong>
+            <div class="progress-track"><div class="progress-fill" id="bar-cpu"></div></div>
+            <span class="metric-meta" id="stat-cores">-- logical cores</span>
+          </article>
+
+          <article class="glass-panel metric-card">
+            <span class="metric-label">Memory &amp; zRAM</span>
+            <strong class="metric-value" id="stat-ram">--%</strong>
+            <div class="progress-track"><div class="progress-fill" id="bar-ram"></div></div>
+            <span class="metric-meta" id="stat-ram-detail">-- / -- GB</span>
+          </article>
+
+          <article class="glass-panel metric-card">
+            <span class="metric-label">Root Storage</span>
+            <strong class="metric-value" id="stat-disk">--%</strong>
+            <div class="progress-track"><div class="progress-fill" id="bar-disk"></div></div>
+            <span class="metric-meta" id="stat-disk-detail">-- / -- GB</span>
+          </article>
+
+          <article class="glass-panel metric-card">
+            <span class="metric-label">Gaming Profile</span>
+            <strong class="metric-value" id="stat-gamemode">Ready</strong>
+            <div class="metric-spacer"></div>
+            <span class="metric-meta" id="stat-kernel">Linux / Sway Wayland</span>
+          </article>
+        </div>
+
+        <div class="split-row">
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Quick Desktop Actions</h2>
+              <span class="block-hint">Instant Sway &amp; app triggers</span>
+            </div>
+            <div class="actions-grid">
+              <button type="button" id="act-terminal" class="action-tile" data-action="open-terminal">
+                <span class="action-title">Kitty Terminal</span>
+                <span class="action-key">Super + Return</span>
+              </button>
+              <button type="button" id="act-files" class="action-tile" data-action="open-files">
+                <span class="action-title">Thunar Files</span>
+                <span class="action-key">Super + E</span>
+              </button>
+              <button type="button" id="act-browser" class="action-tile" data-action="open-aero-browser">
+                <span class="action-title">Aero Browser</span>
+                <span class="action-key">Super + Shift + B</span>
+              </button>
+              <button type="button" id="act-store" class="action-tile" data-action="open-app-center">
+                <span class="action-title">Bauh App Center</span>
+                <span class="action-key">Super + S</span>
+              </button>
+              <button type="button" id="act-theme-menu" class="action-tile" data-action="open-theme-menu">
+                <span class="action-title">Wofi Theme Picker</span>
+                <span class="action-key">Super + Shift + T</span>
+              </button>
+              <button type="button" id="act-lock" class="action-tile" data-action="lock-screen">
+                <span class="action-title">Lock Screen</span>
+                <span class="action-key">Super + Ctrl + L</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>System Environment</h2>
+              <span class="block-hint" id="stat-uptime">Uptime: --</span>
+            </div>
+            <dl class="env-list">
+              <div class="env-row"><dt>Operating System</dt><dd id="env-os">AeroOS (Ubuntu 26.04)</dd></div>
+              <div class="env-row"><dt>Host Machine</dt><dd id="env-host">aeroos-desktop</dd></div>
+              <div class="env-row"><dt>Display Session</dt><dd id="env-compositor">Sway / Wayland</dd></div>
+              <div class="env-row"><dt>Architecture</dt><dd id="env-arch">x86_64</dd></div>
+              <div class="env-row"><dt>Kernel Release</dt><dd id="env-kernel">6.8.0-generic</dd></div>
+              <div class="env-row"><dt>zRAM Compression</dt><dd id="env-zram">Active</dd></div>
+            </dl>
+          </section>
+        </div>
+      </section>
+
+      <!-- TAB 2: THEMES -->
+      <section id="tab-themes" class="tab-panel" role="tabpanel" aria-labelledby="nav-themes" hidden>
+        <div class="panel-intro">
+          <p>Switching a theme updates Sway window borders, wallpaper, floating Waybar, Wofi launcher, Mako notifications, Swaylock, and Kitty terminal colors together.</p>
+        </div>
+        <div id="themes-grid" class="themes-grid"></div>
+      </section>
+
+      <!-- TAB 3: WEBAPPS & PWAS -->
+      <section id="tab-webapps" class="tab-panel" role="tabpanel" aria-labelledby="nav-webapps" hidden>
+        <div class="webapp-layout">
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Create Borderless WebApp</h2>
+              <span class="block-hint">Generates .desktop launcher &amp; isolated profile</span>
+            </div>
+            <form id="webapp-install-form" class="webapp-form">
+              <div class="form-row">
+                <label class="field">
+                  <span>Application Name</span>
+                  <input type="text" id="webapp-name-input" placeholder="e.g. Excalidraw" required maxlength="48">
+                </label>
+                <label class="field">
+                  <span>Web URL</span>
+                  <input type="url" id="webapp-url-input" placeholder="https://excalidraw.com" required>
+                </label>
+              </div>
+              <div class="form-row">
+                <label class="field">
+                  <span>Category</span>
+                  <select id="webapp-category-select">
+                    <option value="Network">Internet &amp; Communication</option>
+                    <option value="Development">Development</option>
+                    <option value="Graphics">Design &amp; Graphics</option>
+                    <option value="Office">Productivity &amp; Docs</option>
+                    <option value="AudioVideo">Media</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Web Runtime Engine</span>
+                  <select id="webapp-engine-select">
+                    <option value="auto">Auto (Brave App Mode / QtWebEngine)</option>
+                    <option value="brave">Brave / Chromium App Mode</option>
+                    <option value="qtwebengine">PyQt5 QtWebEngine Window</option>
+                  </select>
+                </label>
+                <div class="field field-submit">
+                  <button type="submit" id="webapp-install-btn" class="btn btn-primary">Install WebApp</button>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Installed WebApps</h2>
+              <span class="block-hint" id="installed-count">0 installed</span>
+            </div>
+            <div id="installed-webapps-list" class="webapp-grid"></div>
+          </section>
+
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Curated WebApp Catalog</h2>
+              <span class="block-hint">One-click desktop integration</span>
+            </div>
+            <div id="catalog-webapps-list" class="webapp-grid"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- TAB 4: PERFORMANCE & KEYS -->
+      <section id="tab-performance" class="tab-panel" role="tabpanel" aria-labelledby="nav-performance" hidden>
+        <div class="split-row">
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Kernel &amp; Gaming Stack</h2>
+              <span class="block-hint">Configured via 99-aero-performance.conf</span>
+            </div>
+            <dl class="env-list" id="sysctl-list">
+              <div class="env-row"><dt>vm.swappiness</dt><dd id="sys-swappiness">10</dd></div>
+              <div class="env-row"><dt>vm.max_map_count</dt><dd id="sys-maxmap">2147483642</dd></div>
+              <div class="env-row"><dt>TCP Congestion Control</dt><dd id="sys-bbr">bbr</dd></div>
+              <div class="env-row"><dt>Queue Discipline</dt><dd id="sys-qdisc">fq</dd></div>
+              <div class="env-row"><dt>GameMode Governor</dt><dd id="sys-gamemode">performance (on game launch)</dd></div>
+            </dl>
+          </section>
+
+          <section class="glass-panel section-block">
+            <div class="block-header">
+              <h2>Sway Keybindings</h2>
+              <input type="search" id="shortcut-filter" class="inline-search" placeholder="Filter shortcuts..." aria-label="Filter keyboard shortcuts">
+            </div>
+            <div id="shortcuts-list" class="shortcuts-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Quick Command Palette Dialog -->
+  <dialog id="command-dialog" class="command-dialog" aria-labelledby="command-dialog-label">
+    <div class="command-box">
+      <label for="command-search-input" id="command-dialog-label" class="sr-only">Search AeroOS actions, themes, and shortcuts</label>
+      <input type="search" id="command-search-input" class="command-input" placeholder="Type a theme, tab, WebApp, or shortcut..." autocomplete="off">
+      <div id="command-results" class="command-results" role="listbox"></div>
+    </div>
+  </dialog>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+  <script src="hub.js"></script>
+</body>
+</html>

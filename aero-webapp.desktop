@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=AeroOS WebApps Launcher
+Comment=Launch installed borderless WebApps and PWAs
+Exec=/usr/local/bin/aero-webapp menu
+Icon=applications-internet
+Terminal=false
+Type=Application
+Categories=Network;Utility;
+Keywords=webapp;pwa;browser;apps;

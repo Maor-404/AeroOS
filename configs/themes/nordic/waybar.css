@@ -1,41 +1,139 @@
 * {
     border: none;
     border-radius: 0;
-    font-family: "Outfit", "Inter", sans-serif;
+    font-family: "Inter", "Outfit", "Font Awesome 6 Free", "Font Awesome 6 Brands", "Noto Color Emoji", sans-serif;
     font-size: 13px;
+    font-weight: 500;
     min-height: 0;
 }
+
 window#waybar {
-    background-color: rgba(46, 52, 64, 0.9);
-    border-bottom: 2px solid #4c566a;
-    color: #d8dee9;
+    background-color: rgba(46, 52, 64, 0.84);
+    border: 1px solid rgba(136, 192, 208, 0.22);
+    border-radius: 12px;
+    color: #eceff4;
 }
+
+#custom-launcher {
+    padding: 0 12px;
+    margin: 4px 4px 4px 6px;
+    border-radius: 8px;
+    background-color: #3b4252;
+    border: 1px solid rgba(136, 192, 208, 0.3);
+    color: #88c0d0;
+    font-weight: 700;
+}
+
+#custom-launcher:hover {
+    background-color: #434c5e;
+    color: #eceff4;
+}
+
+#workspaces {
+    margin: 4px 4px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: rgba(59, 66, 82, 0.65);
+}
+
 #workspaces button {
-    padding: 0 5px;
+    padding: 0 9px;
+    margin: 0 2px;
     background-color: transparent;
     color: #d8dee9;
-    border-bottom: 2px solid transparent;
+    border-radius: 6px;
 }
+
 #workspaces button:hover {
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 2px solid #88c0d0;
-}
-#workspaces button.focused {
     background-color: #434c5e;
-    border-bottom: 2px solid #81a1c1;
-    color: #88c0d0;
+    color: #eceff4;
 }
-#clock, #battery, #cpu, #memory, #temperature, #network, #pulseaudio, #tray {
+
+#workspaces button.focused {
+    background-color: #88c0d0;
+    color: #2e3440;
+    font-weight: 700;
+}
+
+#workspaces button.urgent {
+    background-color: #bf616a;
+    color: #eceff4;
+}
+
+#mode,
+#window {
     padding: 0 10px;
-    margin: 4px 2px;
-    border-radius: 4px;
-    background-color: #3b4252;
+    margin: 4px 4px;
+    border-radius: 8px;
     color: #d8dee9;
 }
-#clock { background-color: #81a1c1; color: #2e3440; font-weight: bold; }
-#pulseaudio { background-color: #a3be8c; color: #2e3440; }
-#network { background-color: #88c0d0; color: #2e3440; }
-#cpu { background-color: #434c5e; }
-#memory { background-color: #4c566a; }
-#temperature { background-color: #bf616a; }
-#battery { background-color: #b48ead; color: #2e3440; }
+
+#mode {
+    background-color: #8fbcbb;
+    color: #2e3440;
+    font-weight: 700;
+}
+
+#clock,
+#custom-theme,
+#custom-gamemode,
+#custom-power,
+#pulseaudio,
+#network,
+#cpu,
+#memory,
+#temperature,
+#battery,
+#tray {
+    padding: 0 11px;
+    margin: 4px 2px;
+    border-radius: 8px;
+    background-color: #3b4252;
+    color: #e5e9f0;
+}
+
+#clock {
+    background-color: #434c5e;
+    border: 1px solid rgba(136, 192, 208, 0.28);
+    color: #eceff4;
+    font-weight: 600;
+    padding: 0 14px;
+}
+
+#custom-theme {
+    color: #88c0d0;
+}
+
+#custom-gamemode.active {
+    background-color: rgba(163, 190, 140, 0.25);
+    border: 1px solid #a3be8c;
+    color: #a3be8c;
+}
+
+#pulseaudio.muted {
+    color: #7b88a1;
+}
+
+#network.disconnected {
+    color: #bf616a;
+}
+
+#temperature.critical,
+#battery.critical:not(.charging) {
+    background-color: rgba(191, 97, 106, 0.3);
+    color: #eceff4;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #a3be8c;
+}
+
+#custom-power {
+    margin-right: 6px;
+}
+
+#custom-power:hover {
+    background-color: rgba(191, 97, 106, 0.35);
+    color: #eceff4;
+}

@@ -1,0 +1,20 @@
+{
+  "id": "aero",
+  "name": "Aero Glass",
+  "tagline": "Translucent ocean-slate glass with crisp specular highlights",
+  "mode": "glass",
+  "wallpaper": "aero-glass.jpg",
+  "gtkTheme": "Adwaita-dark",
+  "iconTheme": "Papirus-Dark",
+  "swatches": ["#071422", "#0f273d", "#38bdf8", "#34d399", "#e0f2fe"],
+  "tokens": {
+    "bg": "#071422",
+    "surface": "rgba(11, 27, 44, 0.72)",
+    "surfaceStrong": "rgba(15, 36, 58, 0.88)",
+    "border": "rgba(186, 230, 253, 0.22)",
+    "accent": "#38bdf8",
+    "accentAlt": "#34d399",
+    "text": "#f0f9ff",
+    "muted": "#94b8d0"
+  }
+}
