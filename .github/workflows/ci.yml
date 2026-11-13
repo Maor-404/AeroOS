@@ -1,0 +1,98 @@
+name: AeroOS CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    name: Lint Scripts, Configs & Web Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lint tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck jq
+
+      - name: Shell syntax & ShellCheck
+        run: |
+          bash -n aero-setup.sh build-iso.sh build-iso-wsl1.sh aero-theme aero-power
+          shellcheck -S warning aero-setup.sh build-iso.sh build-iso-wsl1.sh aero-theme aero-power
+
+      - name: Validate JSON configs
+        run: |
+          jq empty configs/waybar/config
+          for f in configs/themes/*/theme.json; do
+            jq empty "$f"
+          done
+
+      - name: Validate Web JS syntax
+        run: |
+          node -e 'new Function(require("fs").readFileSync("docs/app.js","utf8"))'
+          node -e 'new Function(require("fs").readFileSync("docs/hub/hub.js","utf8"))'
+
+  build-native-tools:
+    name: Build Rust & C++17 Native Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust & Qt5 WebEngine toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            rustc g++ pkg-config qtbase5-dev qtwebengine5-dev curl
+
+      - name: Compile aero-hub, aero-webapp, and aero-browser
+        run: make all browser
+
+      - name: Smoke-test aero-hub & aero-webapp
+        run: |
+          ./aero-webapp list --json | jq empty
+          ./aero-hub --serve-only --port 18421 >/tmp/hub.log 2>&1 &
+          PID=$!
+          sleep 0.5
+          curl -sf http://127.0.0.1:18421/api/health | jq -e '.ok == true and .runtime == "rust"'
+          curl -sf http://127.0.0.1:18421/api/system | jq -e '.cpuCores >= 1'
+          curl -sf http://127.0.0.1:18421/api/themes | jq -e '.themes | length == 4'
+          kill "$PID" || true
+
+      - name: Upload compiled binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: aeroos-native-binaries-x64
+          path: |
+            aero-hub
+            aero-webapp
+            aero-browser
+
+  docker-build:
+    name: Build & Verify OCI Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t aeroos:ci .
+
+      - name: Smoke-test container
+        run: |
+          CID=$(docker run -d -p 18080:8080 aeroos:ci)
+          trap 'docker rm -f "$CID" >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -sf http://127.0.0.1:18080/api/health; then
+              echo ""
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$CID"
+          exit 1
