@@ -1,9 +1,12 @@
-name: Build AeroOS ISO
+name: Build & Publish Pre-built AeroOS ISO
 
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -12,6 +15,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free disk space for ISO build
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -19,12 +27,31 @@ jobs:
 
       - name: Run ISO Builder
         run: |
-          chmod +x build-iso.sh aero-setup.sh
+          chmod +x build-iso.sh aero-setup.sh aero-theme aero-power
           sudo ./build-iso.sh
+          sha256sum aeroos-custom-26.04.iso > aeroos-custom-26.04.iso.sha256
 
       - name: Upload Custom ISO Artifact
         uses: actions/upload-artifact@v4
         with:
           name: aeroos-custom-iso
-          path: aeroos-custom-26.04.iso
-          compression-level: 0 # Don't re-compress the already compressed ISO file
+          path: |
+            aeroos-custom-26.04.iso
+            aeroos-custom-26.04.iso.sha256
+          compression-level: 0
+
+      - name: Publish Pre-built ISO to GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v26.04-latest"
+          NOTES="Automated Ubuntu 26.04 LTS Sway Wayland pre-built ISO from commit ${GITHUB_SHA::7}."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" aeroos-custom-26.04.iso aeroos-custom-26.04.iso.sha256 --clobber
+            gh release edit "$TAG" --title "AeroOS 26.04 LTS (Pre-built ISO)" --notes "$NOTES" --latest
+          else
+            gh release create "$TAG" aeroos-custom-26.04.iso aeroos-custom-26.04.iso.sha256 \
+              --title "AeroOS 26.04 LTS (Pre-built ISO)" \
+              --notes "$NOTES" \
+              --latest
+          fi

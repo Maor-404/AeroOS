@@ -83,7 +83,7 @@ echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
 cp -r ./configs ./docs ./src "${CHROOT_DIR}/opt/aeroos/"
-cp ./go.mod ./Makefile ./aero-setup.sh ./aero-theme ./aero-power "${CHROOT_DIR}/opt/aeroos/"
+cp ./Makefile ./aero-setup.sh ./aero-theme ./aero-power "${CHROOT_DIR}/opt/aeroos/"
 cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
 chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
          "${CHROOT_DIR}/opt/aeroos/aero-theme" \
