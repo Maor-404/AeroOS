@@ -77,6 +77,8 @@ apt-get install -y --no-install-recommends \
     wl-clipboard \
     pavucontrol \
     kitty \
+    libqt5widgets5 \
+    libqt5webenginewidgets5 \
     python3-pip \
     python3-pyqt5 \
     python3-pyqt5.qtwebengine \
@@ -191,9 +193,25 @@ ln -sf /usr/share/aeroos/themes/aero/swaylock.conf /etc/skel/.config/swaylock/co
 ln -sf /usr/share/aeroos/themes/aero/kitty.conf /etc/skel/.config/kitty/theme.conf
 echo "aero" > /etc/skel/.config/aeroos/current-theme
 
-# Install AeroOS CLI, Browser & Web Hub utilities
-echo "[+] Deploying AeroOS utilities (aero-theme, aero-power, aero-webapp, aero-hub, aero-browser)..."
-for tool in aero-theme aero-power aero-webapp aero-hub aero-browser; do
+# Compile & Install AeroOS Native Tools (Go: aero-hub, Rust: aero-webapp, C++: aero-browser)
+echo "[+] Building native AeroOS binaries (Go, Rust, C++)..."
+apt-get install -y --no-install-recommends \
+    golang-go \
+    rustc \
+    g++ \
+    pkg-config \
+    qtbase5-dev \
+    qtwebengine5-dev
+
+go build -ldflags="-s -w" -o /usr/local/bin/aero-hub ./src/aero-hub
+rustc -O src/aero-webapp/main.rs -o /usr/local/bin/aero-webapp
+# shellcheck disable=SC2046
+g++ -O2 -std=c++17 -fPIC src/aero-browser/main.cpp -o /usr/local/bin/aero-browser \
+    $(pkg-config --cflags --libs Qt5Widgets Qt5WebEngineWidgets)
+chmod 755 /usr/local/bin/aero-hub /usr/local/bin/aero-webapp /usr/local/bin/aero-browser
+
+echo "[+] Deploying shell utilities (aero-theme, aero-power)..."
+for tool in aero-theme aero-power; do
     if [ -f "./${tool}" ]; then
         cp "./${tool}" "/usr/local/bin/${tool}"
         chmod 755 "/usr/local/bin/${tool}"
@@ -239,10 +257,11 @@ ufw --force enable || true
 systemctl enable ufw || true
 systemctl enable unattended-upgrades || true
 
-echo "[+] Cleaning package caches to keep AeroOS minimal..."
+echo "[+] Purging build-time compilers and cleaning package caches..."
+apt-get purge -y golang-go rustc g++ pkg-config qtbase5-dev qtwebengine5-dev || true
 apt-get autoremove -y
 apt-get clean
-rm -rf /var/lib/apt/lists/* /tmp/*
+rm -rf /var/lib/apt/lists/* /tmp/* /root/go
 
 echo "[+] ==========================================================="
 echo "[+] AeroOS (Sway Wayland) Installation Completed Successfully!"

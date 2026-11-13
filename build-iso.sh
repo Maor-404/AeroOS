@@ -82,15 +82,12 @@ echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 # 5. Copy AeroOS installation scripts and assets into the chroot
 echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
-cp -r ./configs ./docs "${CHROOT_DIR}/opt/aeroos/"
-cp ./aero-setup.sh ./aero-theme ./aero-power ./aero-webapp ./aero-hub ./aero-browser "${CHROOT_DIR}/opt/aeroos/"
+cp -r ./configs ./docs ./src "${CHROOT_DIR}/opt/aeroos/"
+cp ./go.mod ./Makefile ./aero-setup.sh ./aero-theme ./aero-power "${CHROOT_DIR}/opt/aeroos/"
 cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
 chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
          "${CHROOT_DIR}/opt/aeroos/aero-theme" \
-         "${CHROOT_DIR}/opt/aeroos/aero-power" \
-         "${CHROOT_DIR}/opt/aeroos/aero-webapp" \
-         "${CHROOT_DIR}/opt/aeroos/aero-hub" \
-         "${CHROOT_DIR}/opt/aeroos/aero-browser"
+         "${CHROOT_DIR}/opt/aeroos/aero-power"
 
 # 6. Execute aero-setup.sh in Chroot
 echo "[+] Executing customization script inside the chroot environment..."

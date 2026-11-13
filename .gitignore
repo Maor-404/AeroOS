@@ -3,3 +3,6 @@
 /aeroos-build/
 __pycache__/
 *.pyc
+/aero-hub
+/aero-webapp
+/aero-browser
