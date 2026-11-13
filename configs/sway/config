@@ -10,15 +10,22 @@ set $down j
 set $up k
 set $right l
 
-# Preferred Terminal
+# Preferred Terminal & Browser
 set $term kitty
+set $browser brave-browser
 
 # Preferred App Launcher (User-friendly Wofi)
 set $menu wofi --show drun --prompt "Launch Application..." --allow-images
 
-### Output configuration
-# Default wallpaper (Solid deep slate blue color for minimal resource usage)
-output * bg #1e1e2e solid
+### Output & Input Configuration
+# Default wallpaper (overridden by active theme in ~/.config/sway/theme)
+output * bg /usr/share/aeroos/wallpapers/aero-glass.jpg fill
+
+input type:touchpad {
+    tap enabled
+    natural_scroll enabled
+    dwt enabled
+}
 
 ### Key Bindings
 # Start a terminal
@@ -53,6 +60,16 @@ bindsym $mod+Shift+$down move down
 bindsym $mod+Shift+$up move up
 bindsym $mod+Shift+$right move right
 
+# Arrow key focus & move fallbacks
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
 # Workspaces
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
@@ -80,10 +97,18 @@ bindsym $mod+Shift+0 move container to workspace number 10
 # Layout tweaks
 bindsym $mod+f fullscreen toggle
 bindsym $mod+Shift+space floating toggle
+bindsym $mod+b splith
+bindsym $mod+v splitv
 
 # Custom AeroOS Tool Keybinds
+bindsym $mod+a exec aero-hub
+bindsym $mod+w exec aero-webapp menu
+bindsym $mod+Shift+t exec aero-theme --menu
+bindsym $mod+Shift+p exec aero-power
+bindsym $mod+Ctrl+l exec swaylock -C ~/.config/swaylock/config
 bindsym $mod+s exec /usr/local/bin/bauh
 bindsym $mod+i exec sudo calamares -d
+bindsym $mod+e exec thunar
 
 # Media & Volume Keybinds (Gamer & Laptop friendly)
 bindsym XF86AudioRaiseVolume exec pamixer -i 5
@@ -92,20 +117,36 @@ bindsym XF86AudioMute exec pamixer -t
 bindsym XF86MonBrightnessUp exec brightnessctl set 5%+
 bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
 
-# Screenshot tool (Grim + Slurp)
-bindsym Print exec grim -g "$(slurp)" - | wl-copy
+# Screenshot tools (Grim + Slurp)
+bindsym Print exec grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot Copied" "Selection copied to clipboard."
+bindsym $mod+Shift+Print exec mkdir -p ~/Pictures/Screenshots && grim ~/Pictures/Screenshots/aeroos-$(date +%Y%m%d-%H%M%S).png && notify-send "Screenshot Saved" "Saved to ~/Pictures/Screenshots/"
 
 ### Aesthetics (Gaps and Borders)
 gaps inner 8
 gaps outer 4
 default_border pixel 2
 default_floating_border normal
+smart_borders on
+smart_gaps on
 
-# Include dynamic theme settings (window borders, backgrounds)
+### Window Rules for AeroOS Modern Tools & Popups
+for_window [app_id="aero-hub"] floating enable, resize set 1120 720, move position center
+for_window [title="AeroOS Control Hub.*"] floating enable, resize set 1120 720, move position center
+for_window [app_id="pavucontrol"] floating enable, resize set 760 500, move position center
+for_window [app_id="blueman-manager"] floating enable, resize set 680 460, move position center
+for_window [app_id="nm-connection-editor"] floating enable, move position center
+for_window [title="Picture-in-Picture"] floating enable, sticky enable
+
+# Include dynamic theme settings (window borders, wallpaper)
 include theme
 
 ### Autostart Services
 exec waybar
+exec mako
 exec nm-applet --indicator
 exec blueman-applet
-exec mako
+exec swayidle -w \
+    timeout 600 'swaylock -f -C ~/.config/swaylock/config' \
+    timeout 900 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' \
+    before-sleep 'swaylock -f -C ~/.config/swaylock/config'

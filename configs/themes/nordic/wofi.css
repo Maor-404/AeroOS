@@ -1,19 +1,47 @@
 window {
-    margin: 10px;
-    border: 2px solid #81a1c1;
-    border-radius: 8px;
-    background-color: rgba(46, 52, 64, 0.95);
-    font-family: "Outfit", sans-serif;
-    color: #d8dee9;
+    margin: 0px;
+    border: 1px solid rgba(136, 192, 208, 0.35);
+    border-radius: 14px;
+    background-color: rgba(46, 52, 64, 0.92);
+    font-family: "Inter", "Outfit", sans-serif;
+    font-size: 14px;
+    color: #eceff4;
 }
+
+#outer-box {
+    margin: 10px;
+    padding: 4px;
+}
+
 #input {
-    margin: 10px;
+    margin: 6px 6px 12px 6px;
     border: 1px solid #4c566a;
-    border-radius: 4px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 10px 14px;
     background-color: #3b4252;
+    color: #eceff4;
+}
+
+#input:focus {
+    border: 1px solid #88c0d0;
+}
+
+#entry {
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: 8px;
     color: #d8dee9;
 }
-#input:focus { border: 2px solid #88c0d0; }
-#entry:selected { background-color: #81a1c1; color: #2e3440; }
-#text { margin-left: 10px; }
+
+#entry:selected {
+    background-color: #88c0d0;
+    color: #2e3440;
+}
+
+#img {
+    margin-right: 10px;
+}
+
+#text {
+    margin-left: 4px;
+}

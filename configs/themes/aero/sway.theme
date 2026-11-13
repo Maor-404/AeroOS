@@ -1,0 +1,8 @@
+# Aero Glass Theme Config for Sway
+output * bg /usr/share/aeroos/wallpapers/aero-glass.jpg fill
+
+# Window decoration colors: border, background, text, indicator, child_border
+client.focused          #38bdf8 #0e2438 #f0f9ff #34d399 #38bdf8
+client.focused_inactive #1e3a52 #0c1b2a #94b8d0 #1e3a52 #1e3a52
+client.unfocused        #14283b #08131f #7a9bb5 #14283b #14283b
+client.urgent           #f87171 #7f1d1d #fff1f2 #f87171 #f87171

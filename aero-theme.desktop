@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=AeroOS Theme Switcher
+Comment=Switch between Aero Glass, Nordic Frost, Sonokai Obsidian, and Nostalgia 9x
+Exec=/usr/local/bin/aero-theme --menu
+Icon=preferences-desktop-theme
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;
+Keywords=theme;aero;nordic;sonokai;nostalgia;appearance;

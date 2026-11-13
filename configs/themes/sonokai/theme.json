@@ -1,0 +1,20 @@
+{
+  "id": "sonokai",
+  "name": "Sonokai Obsidian",
+  "tagline": "Refined matte charcoal workspace with sage-emerald & ice-cyan accents",
+  "mode": "dark",
+  "wallpaper": "sonokai-obsidian.jpg",
+  "gtkTheme": "Adwaita-dark",
+  "iconTheme": "Papirus-Dark",
+  "swatches": ["#1f2127", "#2c2e34", "#7ec7a2", "#76cce0", "#e2e2e3"],
+  "tokens": {
+    "bg": "#1a1b20",
+    "surface": "rgba(38, 40, 46, 0.82)",
+    "surfaceStrong": "rgba(48, 51, 59, 0.94)",
+    "border": "rgba(126, 199, 162, 0.24)",
+    "accent": "#7ec7a2",
+    "accentAlt": "#76cce0",
+    "text": "#ededee",
+    "muted": "#9fa3ad"
+  }
+}

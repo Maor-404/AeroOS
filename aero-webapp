@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""
+AeroOS WebApp & PWA Engine (aero-webapp)
+Install, manage, and launch modern web applications as borderless Wayland apps.
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+APP_DIR = Path.home() / ".local" / "share" / "aeroos" / "webapps"
+ICON_DIR = APP_DIR / "icons"
+PROFILE_DIR = APP_DIR / "profiles"
+DESKTOP_DIR = Path.home() / ".local" / "share" / "applications"
+REGISTRY_PATH = APP_DIR / "registry.json"
+
+CATALOG = [
+    {
+        "slug": "github",
+        "name": "GitHub",
+        "url": "https://github.com",
+        "category": "Development",
+        "description": "Repositories, pull requests, issues, and Actions",
+        "color": "#38bdf8",
+    },
+    {
+        "slug": "excalidraw",
+        "name": "Excalidraw",
+        "url": "https://excalidraw.com",
+        "category": "Graphics",
+        "description": "Fast collaborative whiteboard and architecture diagrams",
+        "color": "#2dd4bf",
+    },
+    {
+        "slug": "photopea",
+        "name": "Photopea",
+        "url": "https://www.photopea.com",
+        "category": "Graphics",
+        "description": "Full-featured PSD, XCF, and raster/vector image editor",
+        "color": "#38bdf8",
+    },
+    {
+        "slug": "mdn-docs",
+        "name": "MDN Web Docs",
+        "url": "https://developer.mozilla.org",
+        "category": "Development",
+        "description": "Web platform reference for HTML, CSS, and JavaScript",
+        "color": "#34d399",
+    },
+    {
+        "slug": "openstreetmap",
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org",
+        "category": "Network",
+        "description": "Open geographic maps and route planning",
+        "color": "#34d399",
+    },
+    {
+        "slug": "wikipedia",
+        "name": "Wikipedia",
+        "url": "https://www.wikipedia.org",
+        "category": "Office",
+        "description": "Free multilingual encyclopedia as a fast desktop app",
+        "color": "#94a3b8",
+    },
+    {
+        "slug": "codepen",
+        "name": "CodePen",
+        "url": "https://codepen.io",
+        "category": "Development",
+        "description": "Frontend playground for HTML, CSS, and JavaScript",
+        "color": "#7dd3fc",
+    },
+    {
+        "slug": "jitsi-meet",
+        "name": "Jitsi Meet",
+        "url": "https://meet.jit.si",
+        "category": "Network",
+        "description": "Encrypted browser video conferencing",
+        "color": "#38bdf8",
+    },
+]
+
+
+def ensure_dirs() -> None:
+    APP_DIR.mkdir(parents=True, exist_ok=True)
+    ICON_DIR.mkdir(parents=True, exist_ok=True)
+    PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    DESKTOP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def slugify(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.strip().lower()).strip("-")
+    if not slug:
+        slug = "webapp-" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:6]
+    return slug[:48]
+
+
+def validate_url(url: str) -> str:
+    candidate = url.strip()
+    if "://" not in candidate:
+        candidate = "https://" + candidate
+    parsed = urlparse(candidate)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ValueError(f"Invalid HTTP/HTTPS URL: {url}")
+    if any(ch.isspace() for ch in candidate):
+        raise ValueError("URL must not contain whitespace")
+    return candidate
+
+
+def load_registry() -> dict:
+    ensure_dirs()
+    if REGISTRY_PATH.is_file():
+        try:
+            with REGISTRY_PATH.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and isinstance(data.get("apps"), list):
+                    return data
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {"apps": []}
+
+
+def save_registry(data: dict) -> None:
+    ensure_dirs()
+    with REGISTRY_PATH.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def generate_svg_icon(slug: str, name: str, accent: str = "#38bdf8") -> Path:
+    ensure_dirs()
+    icon_path = ICON_DIR / f"{slug}.svg"
+    initials = "".join(part[0].upper() for part in name.split()[:2] if part)[:2] or "W"
+    safe_initials = re.sub(r"[^A-Z0-9]", "", initials) or "W"
+    safe_color = accent if re.match(r"^#[0-9a-fA-F]{6}$", accent) else "#38bdf8"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#091828"/>
+  <rect x="5" y="5" width="54" height="54" rx="15" stroke="{safe_color}" stroke-opacity="0.55" stroke-width="2"/>
+  <text x="32" y="40" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="24" fill="{safe_color}">{safe_initials}</text>
+</svg>
+"""
+    icon_path.write_text(svg, encoding="utf-8")
+    return icon_path
+
+
+def find_browser() -> str | None:
+    for candidate in ("brave-browser", "brave", "chromium", "chromium-browser", "google-chrome"):
+        found = shutil.which(candidate)
+        if found:
+            return found
+    return None
+
+
+def self_exec_path() -> str:
+    installed = Path("/usr/local/bin/aero-webapp")
+    if installed.is_file():
+        return str(installed)
+    return str(Path(__file__).resolve())
+
+
+def install_webapp(
+    name: str,
+    url: str,
+    category: str = "Network",
+    engine: str = "auto",
+    color: str = "#38bdf8",
+    slug: str | None = None,
+) -> dict:
+    clean_name = name.strip()
+    if not clean_name:
+        raise ValueError("WebApp name cannot be empty")
+    clean_url = validate_url(url)
+    app_slug = slugify(slug or clean_name)
+    clean_engine = engine if engine in ("auto", "brave", "qtwebengine") else "auto"
+    clean_category = re.sub(r"[^A-Za-z0-9;]", "", category) or "Network"
+
+    icon_path = generate_svg_icon(app_slug, clean_name, color)
+    desktop_file = DESKTOP_DIR / f"aero-webapp-{app_slug}.desktop"
+    exec_bin = self_exec_path()
+
+    desktop_content = (
+        "[Desktop Entry]\n"
+        f"Name={clean_name}\n"
+        f"Comment=AeroOS WebApp ({clean_url})\n"
+        f"Exec={exec_bin} launch {app_slug}\n"
+        f"Icon={icon_path}\n"
+        "Terminal=false\n"
+        "Type=Application\n"
+        f"Categories={clean_category};WebApp;\n"
+        f"StartupWMClass=aero-webapp-{app_slug}\n"
+    )
+    desktop_file.write_text(desktop_content, encoding="utf-8")
+
+    record = {
+        "slug": app_slug,
+        "name": clean_name,
+        "url": clean_url,
+        "category": clean_category,
+        "engine": clean_engine,
+        "color": color,
+        "icon": str(icon_path),
+        "desktopFile": str(desktop_file),
+    }
+
+    reg = load_registry()
+    reg["apps"] = [a for a in reg["apps"] if a.get("slug") != app_slug]
+    reg["apps"].append(record)
+    save_registry(reg)
+    return record
+
+
+def remove_webapp(slug: str) -> bool:
+    app_slug = slugify(slug)
+    reg = load_registry()
+    before = len(reg["apps"])
+    reg["apps"] = [a for a in reg["apps"] if a.get("slug") != app_slug]
+    save_registry(reg)
+
+    for target in (
+        DESKTOP_DIR / f"aero-webapp-{app_slug}.desktop",
+        ICON_DIR / f"{app_slug}.svg",
+    ):
+        if target.exists():
+            target.unlink()
+
+    profile = PROFILE_DIR / app_slug
+    if profile.is_dir():
+        shutil.rmtree(profile, ignore_errors=True)
+
+    return len(reg["apps"]) < before
+
+
+def launch_qtwebengine(url: str, title: str) -> int:
+    try:
+        from PyQt5.QtCore import QUrl
+        from PyQt5.QtGui import QColor
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+    except ImportError:
+        print("[-] PyQt5 QtWebEngine not available, trying xdg-open...", file=sys.stderr)
+        subprocess.Popen(["xdg-open", url])
+        return 0
+
+    app = QApplication([title])
+    app.setApplicationName(title)
+    view = QWebEngineView()
+    view.setWindowTitle(title)
+    view.resize(1200, 780)
+    view.page().setBackgroundColor(QColor("#071422"))
+    view.load(QUrl(url))
+    view.show()
+    return app.exec_()
+
+
+def launch_webapp(slug: str) -> int:
+    app_slug = slugify(slug)
+    reg = load_registry()
+    entry = next((a for a in reg["apps"] if a.get("slug") == app_slug), None)
+    if not entry:
+        print(f"[-] WebApp '{app_slug}' is not installed.", file=sys.stderr)
+        return 1
+
+    url = entry["url"]
+    engine = entry.get("engine", "auto")
+    browser = find_browser()
+
+    if engine == "qtwebengine" or (engine == "auto" and not browser):
+        return launch_qtwebengine(url, entry["name"])
+
+    if browser:
+        profile = PROFILE_DIR / app_slug
+        profile.mkdir(parents=True, exist_ok=True)
+        cmd = [
+            browser,
+            f"--app={url}",
+            f"--user-data-dir={profile}",
+            f"--class=aero-webapp-{app_slug}",
+            "--no-first-run",
+        ]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 0
+
+    subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return 0
+
+
+def open_menu() -> int:
+    reg = load_registry()
+    apps = reg.get("apps", [])
+    if not apps:
+        hub_bin = shutil.which("aero-hub") or str(Path(__file__).resolve().parent / "aero-hub")
+        if Path(hub_bin).exists():
+            subprocess.Popen([hub_bin, "--tab", "webapps"])
+            return 0
+        print("No WebApps installed yet. Run 'aero-webapp install --name ... --url ...'")
+        return 0
+
+    lines = [f"{a['name']}  ({a['url']})  [{a['slug']}]" for a in apps]
+    lines.append("+ Manage WebApps in AeroOS Hub")
+
+    if os.environ.get("WAYLAND_DISPLAY") and shutil.which("wofi"):
+        proc = subprocess.run(
+            ["wofi", "--dmenu", "--prompt", "Launch WebApp...", "--lines", "8"],
+            input="\n".join(lines),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        choice = proc.stdout.strip()
+        if not choice:
+            return 0
+        if choice.startswith("+ Manage WebApps"):
+            hub_bin = shutil.which("aero-hub") or str(Path(__file__).resolve().parent / "aero-hub")
+            subprocess.Popen([hub_bin, "--tab", "webapps"])
+            return 0
+        match = re.search(r"\[([a-z0-9-]+)\]$", choice)
+        if match:
+            return launch_webapp(match.group(1))
+    else:
+        for idx, app in enumerate(apps, start=1):
+            print(f"{idx}) {app['name']} - {app['url']}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="AeroOS WebApp & PWA Manager")
+    sub = parser.add_subparsers(dest="command")
+
+    list_p = sub.add_parser("list", help="List installed WebApps")
+    list_p.add_argument("--json", action="store_true", help="Output JSON")
+
+    cat_p = sub.add_parser("catalog", help="Show curated WebApp catalog")
+    cat_p.add_argument("--json", action="store_true", help="Output JSON")
+
+    inst_p = sub.add_parser("install", help="Install a WebApp as a desktop app")
+    inst_p.add_argument("--name", required=True)
+    inst_p.add_argument("--url", required=True)
+    inst_p.add_argument("--category", default="Network")
+    inst_p.add_argument("--engine", default="auto", choices=["auto", "brave", "qtwebengine"])
+    inst_p.add_argument("--color", default="#38bdf8")
+    inst_p.add_argument("--slug", default=None)
+
+    rem_p = sub.add_parser("remove", help="Uninstall a WebApp")
+    rem_p.add_argument("slug")
+
+    launch_p = sub.add_parser("launch", help="Launch an installed WebApp")
+    launch_p.add_argument("slug")
+
+    sub.add_parser("menu", help="Open Wofi WebApp launcher menu")
+
+    args = parser.parse_args()
+    if args.command == "list":
+        reg = load_registry()
+        if args.json:
+            print(json.dumps({"installed": reg["apps"], "catalog": CATALOG}, indent=2))
+        else:
+            if not reg["apps"]:
+                print("No WebApps installed.")
+            for a in reg["apps"]:
+                print(f"- {a['name']} [{a['slug']}] -> {a['url']} ({a['engine']})")
+        return 0
+    if args.command == "catalog":
+        if args.json:
+            print(json.dumps(CATALOG, indent=2))
+        else:
+            for item in CATALOG:
+                print(f"- {item['name']} [{item['slug']}] ({item['category']}): {item['url']}")
+        return 0
+    if args.command == "install":
+        record = install_webapp(
+            name=args.name,
+            url=args.url,
+            category=args.category,
+            engine=args.engine,
+            color=args.color,
+            slug=args.slug,
+        )
+        print(json.dumps(record, indent=2))
+        return 0
+    if args.command == "remove":
+        ok = remove_webapp(args.slug)
+        print("Removed." if ok else "Not found.")
+        return 0 if ok else 1
+    if args.command == "launch":
+        return launch_webapp(args.slug)
+    if args.command == "menu":
+        return open_menu()
+
+    parser.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

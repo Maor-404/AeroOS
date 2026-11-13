@@ -1,92 +1,232 @@
 #!/bin/bash
 # ==============================================================================
 # AeroOS Theme Selector
-# Description: Instantly switches Sway, Waybar, and Wofi themes.
+# Description: Instantly switches Sway, Waybar, Wofi, Mako, Swaylock, and
+#              Kitty themes with CLI, Wofi visual menu, and JSON support.
 # ==============================================================================
 
 set -euo pipefail
 
-THEME_DIR="/usr/share/aeroos/themes"
+# Allow local repo fallback when testing outside installed OS
+if [ -d "/usr/share/aeroos/themes" ]; then
+    THEME_DIR="/usr/share/aeroos/themes"
+elif [ -d "$(dirname "$(readlink -f "$0")")/configs/themes" ]; then
+    THEME_DIR="$(dirname "$(readlink -f "$0")")/configs/themes"
+else
+    THEME_DIR="/usr/share/aeroos/themes"
+fi
+
 USER_CONFIG_DIR="${HOME}/.config"
+STATE_DIR="${USER_CONFIG_DIR}/aeroos"
+STATE_FILE="${STATE_DIR}/current-theme"
+
+AVAILABLE_THEMES=("aero" "nordic" "sonokai" "nostalgia9x")
 
 show_usage() {
     echo "AeroOS Theme Selector"
-    echo "Usage: aero-theme [nordic|sonokai|nostalgia9x]"
+    echo "Usage: aero-theme [aero|nordic|sonokai|nostalgia9x|--menu|--list|--current]"
     echo ""
     echo "Available Themes:"
-    echo "  * nordic      - Clean, modern dark frosty theme (Default)"
-    echo "  * sonokai     - Vibrant developer theme"
+    echo "  * aero        - Translucent Aero Glassmorphism (Default)"
+    echo "  * nordic      - Calm Nordic Frost dark minimalism"
+    echo "  * sonokai     - High-contrast Obsidian developer theme"
     echo "  * nostalgia9x - Classic retro Windows 9x teal style"
     exit 1
 }
 
-# If no arguments, show a simple interactive selection menu
-if [ $# -eq 0 ]; then
+get_current_theme() {
+    if [ -f "${STATE_FILE}" ]; then
+        cat "${STATE_FILE}"
+    elif [ -L "${USER_CONFIG_DIR}/sway/theme" ]; then
+        basename "$(dirname "$(readlink -f "${USER_CONFIG_DIR}/sway/theme")")"
+    else
+        echo "aero"
+    fi
+}
+
+list_themes_json() {
+    python3 - "${THEME_DIR}" "$(get_current_theme)" << 'PYEOF'
+import json, os, sys
+theme_dir, current = sys.argv[1], sys.argv[2]
+order = ["aero", "nordic", "sonokai", "nostalgia9x"]
+themes = []
+for tid in order:
+    meta_path = os.path.join(theme_dir, tid, "theme.json")
+    if os.path.isfile(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data["active"] = (tid == current)
+        themes.append(data)
+print(json.dumps({"current": current, "themes": themes}, indent=2))
+PYEOF
+}
+
+is_valid_theme() {
+    local target="$1"
+    for t in "${AVAILABLE_THEMES[@]}"; do
+        if [ "$t" = "$target" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+apply_theme() {
+    local THEME="$1"
+    if ! is_valid_theme "${THEME}"; then
+        echo "[-] Error: Unknown theme '${THEME}'."
+        show_usage
+    fi
+
+    echo "[+] Activating '${THEME}' theme..."
+
+    mkdir -p "${USER_CONFIG_DIR}/sway" \
+             "${USER_CONFIG_DIR}/waybar" \
+             "${USER_CONFIG_DIR}/wofi" \
+             "${USER_CONFIG_DIR}/mako" \
+             "${USER_CONFIG_DIR}/swaylock" \
+             "${USER_CONFIG_DIR}/kitty" \
+             "${STATE_DIR}"
+
+    if [ -f "${THEME_DIR}/${THEME}/sway.theme" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/sway.theme" "${USER_CONFIG_DIR}/sway/theme"
+    fi
+
+    if [ -f "${THEME_DIR}/${THEME}/waybar.css" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/waybar.css" "${USER_CONFIG_DIR}/waybar/style.css"
+    fi
+
+    if [ -f "${THEME_DIR}/${THEME}/wofi.css" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/wofi.css" "${USER_CONFIG_DIR}/wofi/style.css"
+    fi
+
+    if [ -f "${THEME_DIR}/${THEME}/mako.conf" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/mako.conf" "${USER_CONFIG_DIR}/mako/config"
+    fi
+
+    if [ -f "${THEME_DIR}/${THEME}/swaylock.conf" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/swaylock.conf" "${USER_CONFIG_DIR}/swaylock/config"
+    fi
+
+    if [ -f "${THEME_DIR}/${THEME}/kitty.conf" ]; then
+        ln -sf "${THEME_DIR}/${THEME}/kitty.conf" "${USER_CONFIG_DIR}/kitty/theme.conf"
+    fi
+
+    echo "${THEME}" > "${STATE_FILE}"
+
+    # Set GTK & Icon theme overrides when available
+    if command -v gsettings >/dev/null 2>&1; then
+        case "${THEME}" in
+            nostalgia9x)
+                gsettings set org.gnome.desktop.interface gtk-theme "Chicago95" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface icon-theme "Chicago95" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface color-scheme "default" 2>/dev/null || true
+                ;;
+            nordic)
+                gsettings set org.gnome.desktop.interface gtk-theme "Nordic" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface icon-theme "Papirus" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
+                ;;
+            *)
+                gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || true
+                gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
+                ;;
+        esac
+    fi
+
+    # Reload live desktop components if running inside a Wayland session
+    if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        if command -v swaymsg >/dev/null 2>&1; then
+            swaymsg reload >/dev/null 2>&1 || true
+        fi
+        if command -v waybar >/dev/null 2>&1; then
+            if pgrep -x waybar >/dev/null 2>&1; then
+                pkill -USR2 waybar >/dev/null 2>&1 || true
+            fi
+        fi
+        if command -v makoctl >/dev/null 2>&1; then
+            makoctl reload >/dev/null 2>&1 || true
+        fi
+        if pgrep -x kitty >/dev/null 2>&1; then
+            pkill -USR1 kitty >/dev/null 2>&1 || true
+        fi
+        if command -v notify-send >/dev/null 2>&1; then
+            notify-send -a "AeroOS Theme" "Theme Updated" "Active theme switched to '${THEME}'." || true
+        fi
+    fi
+
+    echo "[+] AeroOS Theme successfully updated to '${THEME}'!"
+}
+
+open_wofi_menu() {
+    local entries="aero — Aero Glass (Translucent Default)\nnordic — Nordic Frost (Calm Arctic Dark)\nsonokai — Sonokai Obsidian (High-Contrast Dev)\nnostalgia9x — Nostalgia 9x (Classic Retro Teal)"
+    local picked
+    picked=$(printf "%b" "${entries}" | wofi --dmenu --prompt "Select AeroOS Theme..." --lines 5) || exit 0
+    local theme_id
+    theme_id=$(echo "${picked}" | awk '{print $1}')
+    if [ -n "${theme_id}" ]; then
+        apply_theme "${theme_id}"
+    fi
+}
+
+open_terminal_menu() {
     echo "=========================================="
     echo "     AeroOS Theme Selector Menu"
     echo "=========================================="
-    echo "1) Nordic (Frosty Dark)"
-    echo "2) Sonokai (High-Contrast Dark)"
-    echo "3) Nostalgia 9x (Classic Windows 95)"
+    echo "1) Aero Glass (Translucent Default)"
+    echo "2) Nordic Frost (Calm Arctic Dark)"
+    echo "3) Sonokai Obsidian (High-Contrast Dark)"
+    echo "4) Nostalgia 9x (Classic Windows 95)"
     echo "=========================================="
-    read -rp "Select a theme [1-3]: " choice
-    case $choice in
-        1) THEME="nordic" ;;
-        2) THEME="sonokai" ;;
-        3) THEME="nostalgia9x" ;;
+    read -rp "Select a theme [1-4]: " choice
+    case "${choice}" in
+        1) apply_theme "aero" ;;
+        2) apply_theme "nordic" ;;
+        3) apply_theme "sonokai" ;;
+        4) apply_theme "nostalgia9x" ;;
         *) echo "[-] Invalid selection."; exit 1 ;;
     esac
-else
-    THEME="$1"
+}
+
+if [ $# -eq 0 ]; then
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wofi >/dev/null 2>&1 && [ ! -t 0 ]; then
+        open_wofi_menu
+    else
+        open_terminal_menu
+    fi
+    exit 0
 fi
 
-if [ "${THEME}" != "nordic" ] && [ "${THEME}" != "sonokai" ] && [ "${THEME}" != "nostalgia9x" ]; then
-    echo "[-] Error: Unknown theme '${THEME}'."
-    show_usage
-fi
-
-echo "[+] Activating '${THEME}' theme..."
-
-# Ensure config directories exist
-mkdir -p "${USER_CONFIG_DIR}/sway"
-mkdir -p "${USER_CONFIG_DIR}/waybar"
-mkdir -p "${USER_CONFIG_DIR}/wofi"
-
-# Swap Sway Theme
-if [ -f "${THEME_DIR}/${THEME}/sway.theme" ]; then
-    rm -f "${USER_CONFIG_DIR}/sway/theme"
-    ln -sf "${THEME_DIR}/${THEME}/sway.theme" "${USER_CONFIG_DIR}/sway/theme"
-fi
-
-# Swap Waybar Stylesheet
-if [ -f "${THEME_DIR}/${THEME}/waybar.css" ]; then
-    rm -f "${USER_CONFIG_DIR}/waybar/style.css"
-    ln -sf "${THEME_DIR}/${THEME}/waybar.css" "${USER_CONFIG_DIR}/waybar/style.css"
-fi
-
-# Swap Wofi Stylesheet
-if [ -f "${THEME_DIR}/${THEME}/wofi.css" ]; then
-    rm -f "${USER_CONFIG_DIR}/wofi/style.css"
-    ln -sf "${THEME_DIR}/${THEME}/wofi.css" "${USER_CONFIG_DIR}/wofi/style.css"
-fi
-
-# Set GTK theme overrides if relevant
-if [ "${THEME}" = "nostalgia9x" ]; then
-    # Set vintage GTK theme if Chicago95 is installed
-    gsettings set org.gnome.desktop.interface gtk-theme "Chicago95" 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface icon-theme "Chicago95" 2>/dev/null || true
-elif [ "${THEME}" = "nordic" ]; then
-    gsettings set org.gnome.desktop.interface gtk-theme "Nordic" 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface icon-theme "Papirus" 2>/dev/null || true
-else
-    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || true
-fi
-
-# Reload Sway configuration in real-time
-if command -v swaymsg &> /dev/null && [ -n "${WAYLAND_DISPLAY:-}" ]; then
-    echo "[+] Reloading Sway..."
-    swaymsg reload
-fi
-
-echo "[+] AeroOS Theme successfully updated to '${THEME}'!"
+case "$1" in
+    --current|-c)
+        get_current_theme
+        ;;
+    --list|-l)
+        if [ "${2:-}" = "--json" ]; then
+            list_themes_json
+        else
+            current=$(get_current_theme)
+            for t in "${AVAILABLE_THEMES[@]}"; do
+                if [ "$t" = "$current" ]; then
+                    echo "* $t (active)"
+                else
+                    echo "  $t"
+                fi
+            done
+        fi
+        ;;
+    --menu|-m)
+        if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wofi >/dev/null 2>&1; then
+            open_wofi_menu
+        else
+            open_terminal_menu
+        fi
+        ;;
+    --help|-h)
+        show_usage
+        ;;
+    *)
+        apply_theme "$1"
+        ;;
+esac

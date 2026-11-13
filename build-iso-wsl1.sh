@@ -17,9 +17,9 @@ CHROOT_DIR="${BUILD_DIR}/chroot"
 OUTPUT_ISO="aeroos-custom-24.04.iso"
 
 # Check dependencies
-for cmd in 7z proot mksquashfs xorriso wget rsync curl; do
+for cmd in 7z mksquashfs xorriso wget rsync curl; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full proot squashfs-tools xorriso wget rsync curl"
+        echo "[-] Error: '$cmd' is not installed. Please run: sudo apt install p7zip-full squashfs-tools xorriso wget rsync curl"
         exit 1
     fi
 done
@@ -65,12 +65,17 @@ echo "[+] Detected root squashfs: ${SQUASHFS_NAME}"
 
 unsquashfs -d "${CHROOT_DIR}" "${SQUASHFS_PATH}"
 
-# 4. Copy AeroOS installation scripts into the chroot
-echo "[+] Copying customization scripts into chroot..."
+# 4. Copy AeroOS installation scripts and assets into the chroot
+echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
-cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
-cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
-chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
+cp -r ./configs ./docs "${CHROOT_DIR}/opt/aeroos/"
+cp ./aero-setup.sh ./aero-theme ./aero-power ./aero-webapp ./aero-hub "${CHROOT_DIR}/opt/aeroos/"
+cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
+chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
+         "${CHROOT_DIR}/opt/aeroos/aero-theme" \
+         "${CHROOT_DIR}/opt/aeroos/aero-power" \
+         "${CHROOT_DIR}/opt/aeroos/aero-webapp" \
+         "${CHROOT_DIR}/opt/aeroos/aero-hub"
 
 # 5. Bind mount device filesystems for Chroot
 echo "[+] Setting up chroot virtual mounts..."

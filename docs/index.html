@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-preview-theme="aero">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroOS — Lightweight Wayland Desktop, Aero Glass &amp; WebApps</title>
+  <meta name="description" content="AeroOS transforms Ubuntu 24.04 into a fast, gaming-tuned Sway Wayland desktop with Aero Glassmorphism themes, a local WebEngine Control Hub, and borderless PWAs.">
+  <meta property="og:title" content="AeroOS — Modern Wayland Desktop &amp; WebApp Environment">
+  <meta property="og:description" content="Lightweight Sway Wayland desktop, 4 synchronized themes, gaming kernel tuning, and built-in borderless WebApps.">
+  <link rel="icon" type="image/svg+xml" href="assets/aero-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="brand" id="nav-brand">
+        <img src="assets/aero-logo.svg" alt="AeroOS Emblem" width="32" height="32">
+        <span>AeroOS</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#desktop-preview">Desktop</a>
+        <a href="#web-features">WebEngine</a>
+        <a href="#performance">Performance</a>
+        <a href="#install">Build &amp; Install</a>
+      </nav>
+      <div class="header-cta">
+        <a href="https://github.com/Maor-404/AeroOS" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="hub/index.html" id="header-open-hub" class="btn btn-primary">Open Control Hub</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <h1>Wayland speed wrapped in luminous Aero glass.</h1>
+          <p class="lead">
+            AeroOS converts Ubuntu 24.04 into a fast Sway Wayland workstation with synchronized glassmorphism themes, kernel gaming optimizations, a built-in Control Hub, and native-feeling borderless WebApps.
+          </p>
+          <div class="hero-actions">
+            <a href="hub/index.html" id="hero-launch-hub" class="btn btn-primary btn-lg">Launch Interactive Hub</a>
+            <a href="#install" id="hero-build-guide" class="btn btn-secondary btn-lg">Build Custom ISO</a>
+          </div>
+          <dl class="hero-specs">
+            <div>
+              <dt>Base</dt>
+              <dd>Ubuntu 24.04 LTS</dd>
+            </div>
+            <div>
+              <dt>Compositor</dt>
+              <dd>Sway + Waybar + Wofi</dd>
+            </div>
+            <div>
+              <dt>Web Stack</dt>
+              <dd>Brave + QtWebEngine</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="desktop-stage-wrap" id="desktop-preview">
+          <div class="stage-controls" role="group" aria-label="Desktop theme preview switcher">
+            <button type="button" id="preview-theme-aero" class="theme-pill active" data-theme-id="aero">Aero Glass</button>
+            <button type="button" id="preview-theme-nordic" class="theme-pill" data-theme-id="nordic">Nordic Frost</button>
+            <button type="button" id="preview-theme-sonokai" class="theme-pill" data-theme-id="sonokai">Sonokai</button>
+            <button type="button" id="preview-theme-nostalgia9x" class="theme-pill" data-theme-id="nostalgia9x">Nostalgia 9x</button>
+          </div>
+
+          <div class="desktop-screen" id="desktop-screen" aria-label="Interactive AeroOS Wayland desktop preview">
+            <div class="mock-waybar">
+              <div class="waybar-group">
+                <button type="button" id="mock-launcher-btn" class="wb-pill wb-launcher">◈ Aero</button>
+                <div class="wb-workspaces" role="group" aria-label="Simulated workspaces">
+                  <button type="button" class="wb-ws active" data-ws="1">1</button>
+                  <button type="button" class="wb-ws" data-ws="2">2</button>
+                  <button type="button" class="wb-ws" data-ws="3">3</button>
+                </div>
+              </div>
+              <div class="wb-pill wb-clock" id="mock-clock">Fri Nov 13  12:00</div>
+              <div class="waybar-group">
+                <span class="wb-pill" id="mock-theme-label">◐ aero</span>
+                <span class="wb-pill">CPU 8%</span>
+                <span class="wb-pill">RAM 19%</span>
+              </div>
+            </div>
+
+            <div class="desktop-workspace">
+              <div class="mock-terminal">
+                <div class="mock-titlebar">
+                  <span>kitty — aero-theme</span>
+                  <span class="mock-dots">● ● ●</span>
+                </div>
+                <pre class="mock-code"><code><span class="t-accent">maor@aeroos</span>:~$ aero-theme --list
+* aero         (Aero Glass — Active)
+  nordic       (Nordic Frost)
+  sonokai      (Sonokai Obsidian)
+  nostalgia9x  (Classic 9x)
+
+<span class="t-accent">maor@aeroos</span>:~$ aero-webapp install \
+  --name "Excalidraw" --url https://excalidraw.com
+[+] Desktop entry ready in Wofi!</code></pre>
+              </div>
+
+              <div class="mock-hub-card">
+                <div class="mock-titlebar">
+                  <span>AeroOS Control Hub</span>
+                  <span class="mock-status">Wayland Live</span>
+                </div>
+                <div class="mock-hub-body">
+                  <div class="mock-stat"><span>Active Preset</span><strong id="mock-card-theme">Aero Glass</strong></div>
+                  <div class="mock-stat"><span>TCP Congestion</span><strong>BBR + FQ</strong></div>
+                  <div class="mock-stat"><span>Memory</span><strong>zRAM Enabled</strong></div>
+                  <div class="mock-actions">
+                    <button type="button" id="trigger-mock-notify" class="mini-btn">Test Mako Toast</button>
+                    <a href="hub/index.html" class="mini-btn mini-btn-accent">Open Full Hub</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-wofi" id="mock-wofi" hidden>
+              <div class="wofi-search">Launch Application...</div>
+              <ul class="wofi-list">
+                <li class="selected">AeroOS Control Hub</li>
+                <li>Kitty Terminal</li>
+                <li>Brave Web Browser</li>
+                <li>Excalidraw (WebApp)</li>
+                <li>Bauh App Center</li>
+              </ul>
+            </div>
+
+            <div class="mock-mako" id="mock-mako" hidden>
+              <strong>AeroOS Theme</strong>
+              <p id="mock-mako-text">Theme switched smoothly across Sway, Waybar, Wofi &amp; Kitty.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="web-features" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Modern web integration, built into the OS</h2>
+          <p>Lightweight Wayland speed meets modern browser runtimes. Run local dashboards and cloud tools as focused desktop windows.</p>
+        </div>
+
+        <div class="feature-split">
+          <article class="feature-panel">
+            <h3>AeroOS Control Hub (<code>aero-hub</code>)</h3>
+            <p>
+              Served locally over loopback HTTP and rendered in a frameless PyQt5 QtWebEngine or Chromium window, the Control Hub inspects live CPU, memory, zRAM, and kernel sysctl parameters while switching themes in real time.
+            </p>
+            <ul class="clean-list">
+              <li>Live theme studio with instant Sway, Waybar, Wofi, Mako, Swaylock, and Kitty reload</li>
+              <li>Real-time <code>/proc</code> system telemetry and GameMode readiness status</li>
+              <li>Keyboard shortcut palette (<code>Ctrl+K</code>) and instant launcher actions</li>
+            </ul>
+            <a href="hub/index.html" class="inline-link">Try the interactive Control Hub in your browser →</a>
+          </article>
+
+          <article class="feature-panel">
+            <h3>Borderless WebApps &amp; PWAs (<code>aero-webapp</code>)</h3>
+            <p>
+              Turn any web application into an isolated, distraction-free Wayland window with generated SVG icons and standard XDG <code>.desktop</code> entries indexed automatically by Wofi.
+            </p>
+            <ul class="clean-list">
+              <li>Supports Brave/Chromium <code>--app=</code> isolation or PyQt5 QtWebEngine</li>
+              <li>Dedicated profile directories keep sessions and cookies neatly separated</li>
+              <li>Curated catalog for GitHub, Excalidraw, Photopea, MDN Docs, and custom URLs</li>
+            </ul>
+            <a href="hub/index.html?tab=webapps" class="inline-link">Explore the WebApp Manager →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="performance" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>Tuned for responsiveness and gaming</h2>
+          <p>Every package and kernel sysctl rule in <code>aero-setup.sh</code> targets low input latency, compressed RAM efficiency, and modern GPU support.</p>
+        </div>
+
+        <div class="perf-layout">
+          <div class="perf-tabs" role="tablist" aria-label="System tuning details">
+            <button type="button" id="perf-tab-kernel" class="perf-tab active" role="tab" aria-selected="true" data-perf="kernel">Kernel Sysctl</button>
+            <button type="button" id="perf-tab-gaming" class="perf-tab" role="tab" aria-selected="false" data-perf="gaming">Graphics &amp; Wine</button>
+            <button type="button" id="perf-tab-themes" class="perf-tab" role="tab" aria-selected="false" data-perf="themes">Unified Shell</button>
+          </div>
+          <div class="perf-detail" id="perf-detail-box">
+            <pre><code id="perf-code-view"># /etc/sysctl.d/99-aero-performance.conf
+vm.swappiness = 10
+vm.max_map_count = 2147483642
+vm.dirty_background_ratio = 5
+vm.dirty_ratio = 10
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+fs.file-max = 2097152</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Build an ISO or convert Ubuntu 24.04</h2>
+          <p>Run the bootstrap script on a minimal Ubuntu 24.04 installation or build a bootable Live ISO locally or via GitHub Actions.</p>
+        </div>
+
+        <div class="install-box">
+          <div class="install-tabs" role="tablist" aria-label="Installation methods">
+            <button type="button" id="inst-tab-setup" class="perf-tab active" role="tab" aria-selected="true" data-install="setup">Ubuntu 24.04 Setup</button>
+            <button type="button" id="inst-tab-iso" class="perf-tab" role="tab" aria-selected="false" data-install="iso">Native ISO Builder</button>
+            <button type="button" id="inst-tab-wsl" class="perf-tab" role="tab" aria-selected="false" data-install="wsl">WSL1 ISO Builder</button>
+          </div>
+          <div class="code-panel">
+            <pre><code id="install-code-view">git clone https://github.com/Maor-404/AeroOS.git
+cd AeroOS
+chmod +x aero-setup.sh aero-theme aero-power aero-webapp aero-hub
+sudo ./aero-setup.sh</code></pre>
+            <button type="button" id="copy-install-btn" class="btn btn-secondary">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>AeroOS · Sway Wayland Distribution Builder</span>
+      <div class="footer-links">
+        <a href="hub/index.html">Control Hub</a>
+        <a href="https://github.com/Maor-404/AeroOS" target="_blank" rel="noopener noreferrer">Source Repository</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

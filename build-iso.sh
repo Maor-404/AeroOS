@@ -79,12 +79,17 @@ mount -t tmpfs tmpfs "${CHROOT_DIR}/tmp"
 rm -f "${CHROOT_DIR}/etc/resolv.conf" || true
 echo "nameserver 8.8.8.8" > "${CHROOT_DIR}/etc/resolv.conf"
 
-# 5. Copy AeroOS installation scripts into the chroot
-echo "[+] Copying customization scripts into chroot..."
+# 5. Copy AeroOS installation scripts and assets into the chroot
+echo "[+] Copying customization scripts and assets into chroot..."
 mkdir -p "${CHROOT_DIR}/opt/aeroos"
-cp -r ./configs "${CHROOT_DIR}/opt/aeroos/"
-cp ./aero-setup.sh "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
-chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh"
+cp -r ./configs ./docs "${CHROOT_DIR}/opt/aeroos/"
+cp ./aero-setup.sh ./aero-theme ./aero-power ./aero-webapp ./aero-hub "${CHROOT_DIR}/opt/aeroos/"
+cp ./*.desktop "${CHROOT_DIR}/opt/aeroos/"
+chmod +x "${CHROOT_DIR}/opt/aeroos/aero-setup.sh" \
+         "${CHROOT_DIR}/opt/aeroos/aero-theme" \
+         "${CHROOT_DIR}/opt/aeroos/aero-power" \
+         "${CHROOT_DIR}/opt/aeroos/aero-webapp" \
+         "${CHROOT_DIR}/opt/aeroos/aero-hub"
 
 # 6. Execute aero-setup.sh in Chroot
 echo "[+] Executing customization script inside the chroot environment..."

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=AeroOS Control Hub
+Comment=Manage AeroOS themes, system telemetry, gaming tuning, and WebApps
+Exec=/usr/local/bin/aero-hub
+Icon=preferences-system
+Terminal=false
+Type=Application
+Categories=System;Settings;
+Keywords=aeroos;hub;settings;themes;webapps;performance;
+StartupWMClass=aero-hub

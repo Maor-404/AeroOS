@@ -1,0 +1,165 @@
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Inter", "Outfit", "Font Awesome 6 Free", "Font Awesome 6 Brands", "Noto Color Emoji", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: rgba(8, 21, 35, 0.74);
+    border: 1px solid rgba(186, 230, 253, 0.22);
+    border-radius: 14px;
+    color: #e0f2fe;
+}
+
+window#waybar.hidden {
+    opacity: 0.25;
+}
+
+#custom-launcher {
+    padding: 0 12px;
+    margin: 4px 4px 4px 6px;
+    border-radius: 10px;
+    background-color: rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    color: #7dd3fc;
+    font-weight: 700;
+}
+
+#custom-launcher:hover {
+    background-color: rgba(56, 189, 248, 0.34);
+    color: #f0f9ff;
+}
+
+#workspaces {
+    margin: 4px 4px;
+    padding: 2px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#workspaces button {
+    padding: 0 9px;
+    margin: 0 2px;
+    border-radius: 8px;
+    background-color: transparent;
+    color: #94b8d0;
+    transition: all 0.18s ease;
+}
+
+#workspaces button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f0f9ff;
+}
+
+#workspaces button.focused {
+    background-color: rgba(56, 189, 248, 0.26);
+    border: 1px solid rgba(125, 211, 252, 0.4);
+    color: #f0f9ff;
+    font-weight: 700;
+}
+
+#workspaces button.urgent {
+    background-color: rgba(248, 113, 113, 0.28);
+    color: #fecaca;
+}
+
+#mode,
+#window {
+    padding: 0 10px;
+    margin: 4px 4px;
+    border-radius: 10px;
+    color: #bae6fd;
+}
+
+#mode {
+    background-color: rgba(52, 211, 153, 0.22);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    color: #6ee7b7;
+    font-weight: 700;
+}
+
+#clock,
+#custom-theme,
+#custom-gamemode,
+#custom-power,
+#pulseaudio,
+#network,
+#cpu,
+#memory,
+#temperature,
+#battery,
+#tray {
+    padding: 0 11px;
+    margin: 4px 2px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(186, 230, 253, 0.12);
+    color: #e0f2fe;
+}
+
+#clock {
+    background-color: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    color: #f0f9ff;
+    font-weight: 600;
+    padding: 0 14px;
+}
+
+#custom-theme {
+    color: #7dd3fc;
+}
+
+#custom-theme:hover,
+#clock:hover,
+#pulseaudio:hover,
+#network:hover,
+#cpu:hover,
+#memory:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+#custom-gamemode.active {
+    background-color: rgba(52, 211, 153, 0.22);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    color: #6ee7b7;
+}
+
+#pulseaudio.muted {
+    color: #94a3b8;
+}
+
+#network.disconnected {
+    color: #fca5a5;
+}
+
+#temperature.critical,
+#battery.critical:not(.charging) {
+    background-color: rgba(239, 68, 68, 0.28);
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    color: #fecaca;
+}
+
+#battery.warning:not(.charging) {
+    background-color: rgba(245, 158, 11, 0.22);
+    color: #fde68a;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #6ee7b7;
+}
+
+#custom-power {
+    margin-right: 6px;
+    color: #bae6fd;
+}
+
+#custom-power:hover {
+    background-color: rgba(248, 113, 113, 0.24);
+    border-color: rgba(248, 113, 113, 0.45);
+    color: #fecaca;
+}

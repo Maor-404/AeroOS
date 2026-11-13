@@ -1,0 +1,445 @@
+#!/usr/bin/env python3
+"""
+AeroOS Control Hub Server & Native Desktop Window (aero-hub)
+Provides a local loopback-only HTTP + REST API backend for the AeroOS Control Hub
+and launches it inside QtWebEngine or Chromium/Brave app mode.
+"""
+
+import argparse
+import functools
+import http.server
+import importlib.machinery
+import importlib.util
+import json
+import os
+import platform
+import shutil
+import socket
+import socketserver
+import subprocess
+import sys
+import threading
+import time
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+REPO_ROOT = Path(__file__).resolve().parent
+
+
+def resolve_hub_dir() -> Path:
+    for candidate in (Path("/usr/share/aeroos/hub"), REPO_ROOT / "docs" / "hub"):
+        if candidate.is_dir() and (candidate / "index.html").is_file():
+            return candidate
+    raise FileNotFoundError("Could not locate AeroOS Control Hub web directory")
+
+
+def resolve_theme_dir() -> Path:
+    for candidate in (Path("/usr/share/aeroos/themes"), REPO_ROOT / "configs" / "themes"):
+        if candidate.is_dir():
+            return candidate
+    return Path("/usr/share/aeroos/themes")
+
+
+def resolve_bin(name: str) -> str:
+    local_candidate = REPO_ROOT / name
+    if local_candidate.is_file():
+        return str(local_candidate)
+    installed = Path("/usr/local/bin") / name
+    if installed.is_file():
+        return str(installed)
+    return shutil.which(name) or name
+
+
+def load_webapp_module():
+    target = Path(resolve_bin("aero-webapp"))
+    if not target.is_file():
+        return None
+    loader = importlib.machinery.SourceFileLoader("aero_webapp_mod", str(target))
+    spec = importlib.util.spec_from_loader("aero_webapp_mod", loader)
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def read_proc_cpu_percent() -> float:
+    def sample():
+        with open("/proc/stat", "r", encoding="utf-8") as f:
+            parts = f.readline().split()
+        vals = [int(x) for x in parts[1:]]
+        idle = vals[3] + (vals[4] if len(vals) > 4 else 0)
+        total = sum(vals)
+        return idle, total
+
+    try:
+        i1, t1 = sample()
+        time.sleep(0.08)
+        i2, t2 = sample()
+        dt = t2 - t1
+        if dt <= 0:
+            return 0.0
+        return round((1.0 - (i2 - i1) / dt) * 100.0, 1)
+    except OSError:
+        return 0.0
+
+
+def read_memory_info() -> dict:
+    mem = {}
+    try:
+        with open("/proc/meminfo", "r", encoding="utf-8") as f:
+            for line in f:
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    num = int(v.strip().split()[0])
+                    mem[k] = num
+    except OSError:
+        return {"totalGb": 0, "usedGb": 0, "percent": 0, "zramActive": False}
+
+    total_kb = mem.get("MemTotal", 0)
+    avail_kb = mem.get("MemAvailable", mem.get("MemFree", 0))
+    used_kb = max(0, total_kb - avail_kb)
+    pct = round((used_kb / total_kb) * 100.0, 1) if total_kb else 0.0
+
+    zram_active = False
+    try:
+        for p in Path("/sys/block").glob("zram*"):
+            size_file = p / "disksize"
+            if size_file.is_file() and int(size_file.read_text().strip() or "0") > 0:
+                zram_active = True
+                break
+    except OSError:
+        pass
+
+    return {
+        "totalGb": round(total_kb / (1024 * 1024), 1),
+        "usedGb": round(used_kb / (1024 * 1024), 1),
+        "percent": pct,
+        "zramActive": zram_active,
+    }
+
+
+def read_os_name() -> str:
+    os_release = Path("/etc/os-release")
+    if os_release.is_file():
+        for line in os_release.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if line.startswith("PRETTY_NAME="):
+                return line.split("=", 1)[1].strip().strip('"')
+    return f"{platform.system()} {platform.release()}"
+
+
+def read_uptime() -> str:
+    try:
+        secs = int(float(Path("/proc/uptime").read_text().split()[0]))
+        days, rem = divmod(secs, 86400)
+        hours, rem = divmod(rem, 3600)
+        mins, _ = divmod(rem, 60)
+        if days > 0:
+            return f"{days}d {hours}h {mins}m"
+        if hours > 0:
+            return f"{hours}h {mins}m"
+        return f"{mins}m"
+    except OSError:
+        return "—"
+
+
+def read_sysctl(key: str, default: str = "N/A") -> str:
+    path = Path("/proc/sys") / key.replace(".", "/")
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return default
+
+
+def check_gamemode_status() -> dict:
+    installed = shutil.which("gamemoded") is not None
+    active = False
+    if installed:
+        try:
+            proc = subprocess.run(
+                ["gamemoded", "-s"], capture_output=True, text=True, timeout=1.5, check=False
+            )
+            active = "active" in proc.stdout.lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return {"installed": installed, "active": active}
+
+
+def get_system_snapshot() -> dict:
+    disk = shutil.disk_usage("/")
+    disk_pct = round((disk.used / disk.total) * 100.0, 1) if disk.total else 0.0
+    return {
+        "mode": "live",
+        "hostname": socket.gethostname(),
+        "os": read_os_name(),
+        "kernel": platform.release(),
+        "arch": platform.machine(),
+        "uptime": read_uptime(),
+        "compositor": os.environ.get("XDG_CURRENT_DESKTOP") or (
+            "Sway / Wayland" if os.environ.get("WAYLAND_DISPLAY") else "Desktop / Local Host"
+        ),
+        "wayland": bool(os.environ.get("WAYLAND_DISPLAY")),
+        "cpuPercent": read_proc_cpu_percent(),
+        "cpuCores": os.cpu_count() or 1,
+        "memory": read_memory_info(),
+        "disk": {
+            "totalGb": round(disk.total / (1024 ** 3), 1),
+            "usedGb": round(disk.used / (1024 ** 3), 1),
+            "percent": disk_pct,
+        },
+        "gamemode": check_gamemode_status(),
+        "sysctl": {
+            "swappiness": read_sysctl("vm.swappiness"),
+            "maxMapCount": read_sysctl("vm.max_map_count"),
+            "congestion": read_sysctl("net.ipv4.tcp_congestion_control"),
+            "qdisc": read_sysctl("net.core.default_qdisc"),
+        },
+    }
+
+
+def get_themes_payload() -> dict:
+    theme_dir = resolve_theme_dir()
+    state_file = Path.home() / ".config" / "aeroos" / "current-theme"
+    current = "aero"
+    if state_file.is_file():
+        current = state_file.read_text(encoding="utf-8").strip() or "aero"
+
+    themes = []
+    for tid in ("aero", "nordic", "sonokai", "nostalgia9x"):
+        meta = theme_dir / tid / "theme.json"
+        if meta.is_file():
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            data["active"] = (tid == current)
+            themes.append(data)
+    return {"current": current, "themes": themes}
+
+
+class AeroHubHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+def make_handler(hub_dir: Path, wallpapers_dir: Path, port_holder: dict):
+    webapp_mod = load_webapp_module()
+    allowed_themes = {"aero", "nordic", "sonokai", "nostalgia9x"}
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(hub_dir), **kwargs)
+
+        def log_message(self, format, *args):
+            return
+
+        def is_valid_local_origin(self) -> bool:
+            port = port_holder["port"]
+            host = self.headers.get("Host", "")
+            if host not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+                return False
+            origin = self.headers.get("Origin")
+            if origin and origin not in (f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
+                return False
+            return True
+
+        def send_json(self, payload: dict, status: int = 200) -> None:
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def read_json_body(self) -> dict:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > 65536:
+                return {}
+            raw = self.rfile.read(length).decode("utf-8")
+            return json.loads(raw)
+
+        def translate_path(self, path: str) -> str:
+            parsed = urlparse(path).path
+            if parsed.startswith("/assets/wallpapers/") and wallpapers_dir.is_dir():
+                fname = Path(parsed).name
+                candidate = wallpapers_dir / fname
+                if candidate.is_file():
+                    return str(candidate)
+            if parsed == "/assets/aero-logo.svg":
+                logo = hub_dir.parent / "assets" / "aero-logo.svg"
+                if logo.is_file():
+                    return str(logo)
+            return super().translate_path(path)
+
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/health":
+                return self.send_json({"ok": True, "mode": "live", "version": "2.0.0"})
+            if parsed.path == "/api/system":
+                return self.send_json(get_system_snapshot())
+            if parsed.path == "/api/themes":
+                return self.send_json(get_themes_payload())
+            if parsed.path == "/api/webapps":
+                if webapp_mod is None:
+                    return self.send_json({"installed": [], "catalog": []})
+                reg = webapp_mod.load_registry()
+                return self.send_json({"installed": reg.get("apps", []), "catalog": webapp_mod.CATALOG})
+            return super().do_GET()
+
+        def do_POST(self):
+            if not self.is_valid_local_origin():
+                return self.send_json({"error": "Forbidden origin"}, status=403)
+            parsed = urlparse(self.path)
+            try:
+                body = self.read_json_body()
+            except (ValueError, json.JSONDecodeError):
+                return self.send_json({"error": "Invalid JSON body"}, status=400)
+
+            if parsed.path == "/api/theme":
+                theme_id = str(body.get("theme", "")).strip()
+                if theme_id not in allowed_themes:
+                    return self.send_json({"error": f"Unknown theme: {theme_id}"}, status=400)
+                aero_theme_bin = resolve_bin("aero-theme")
+                res = subprocess.run(
+                    [aero_theme_bin, theme_id],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                return self.send_json({
+                    "ok": res.returncode == 0,
+                    "theme": theme_id,
+                    "output": res.stdout.strip(),
+                }, status=200 if res.returncode == 0 else 500)
+
+            if parsed.path == "/api/webapps":
+                if webapp_mod is None:
+                    return self.send_json({"error": "aero-webapp unavailable"}, status=500)
+                try:
+                    rec = webapp_mod.install_webapp(
+                        name=str(body.get("name", "")),
+                        url=str(body.get("url", "")),
+                        category=str(body.get("category", "Network")),
+                        engine=str(body.get("engine", "auto")),
+                        color=str(body.get("color", "#38bdf8")),
+                        slug=body.get("slug"),
+                    )
+                    return self.send_json({"ok": True, "app": rec})
+                except ValueError as exc:
+                    return self.send_json({"error": str(exc)}, status=400)
+
+            if parsed.path == "/api/webapps/launch":
+                if webapp_mod is None:
+                    return self.send_json({"error": "aero-webapp unavailable"}, status=500)
+                slug = str(body.get("slug", ""))
+                code = webapp_mod.launch_webapp(slug)
+                return self.send_json({"ok": code == 0}, status=200 if code == 0 else 404)
+
+            if parsed.path == "/api/action":
+                action = str(body.get("action", ""))
+                dispatch = {
+                    "open-terminal": ["kitty"],
+                    "open-files": ["thunar"],
+                    "open-browser": ["brave-browser"],
+                    "open-app-center": ["/usr/local/bin/bauh"],
+                    "open-theme-menu": [resolve_bin("aero-theme"), "--menu"],
+                    "open-power-menu": [resolve_bin("aero-power")],
+                    "lock-screen": ["swaylock", "-C", str(Path.home() / ".config" / "swaylock" / "config")],
+                }
+                cmd = dispatch.get(action)
+                if not cmd:
+                    return self.send_json({"error": "Unsupported action"}, status=400)
+                if not shutil.which(cmd[0]) and not Path(cmd[0]).exists():
+                    return self.send_json({"error": f"Executable not found: {cmd[0]}"}, status=404)
+                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return self.send_json({"ok": True, "action": action})
+
+            return self.send_json({"error": "Not found"}, status=404)
+
+        def do_DELETE(self):
+            if not self.is_valid_local_origin():
+                return self.send_json({"error": "Forbidden origin"}, status=403)
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/webapps":
+                if webapp_mod is None:
+                    return self.send_json({"error": "aero-webapp unavailable"}, status=500)
+                slug = parse_qs(parsed.query).get("slug", [""])[0]
+                ok = webapp_mod.remove_webapp(slug)
+                return self.send_json({"ok": ok}, status=200 if ok else 404)
+            return self.send_json({"error": "Not found"}, status=404)
+
+    return Handler
+
+
+def open_native_window(url: str) -> int:
+    try:
+        from PyQt5.QtCore import QUrl
+        from PyQt5.QtGui import QColor
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+        app = QApplication(["aero-hub"])
+        app.setApplicationName("aero-hub")
+        view = QWebEngineView()
+        view.setWindowTitle("AeroOS Control Hub")
+        view.resize(1120, 720)
+        view.page().setBackgroundColor(QColor("#071422"))
+        view.load(QUrl(url))
+        view.show()
+        return app.exec_()
+    except ImportError:
+        pass
+
+    for browser in ("brave-browser", "brave", "chromium", "chromium-browser", "google-chrome"):
+        found = shutil.which(browser)
+        if found:
+            proc = subprocess.Popen(
+                [found, f"--app={url}", "--class=aero-hub", "--no-first-run"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return proc.wait()
+
+    subprocess.Popen(["xdg-open", url])
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="AeroOS Control Hub")
+    parser.add_argument("--tab", default="overview", help="Initial tab (overview, themes, webapps, performance)")
+    parser.add_argument("--port", type=int, default=0, help="Port to bind on 127.0.0.1 (0 = ephemeral)")
+    parser.add_argument("--serve-only", action="store_true", help="Serve HTTP API without launching GUI window")
+    args = parser.parse_args()
+
+    hub_dir = resolve_hub_dir()
+    wallpapers_dir = Path("/usr/share/aeroos/wallpapers")
+    if not wallpapers_dir.is_dir():
+        wallpapers_dir = REPO_ROOT / "docs" / "assets" / "wallpapers"
+
+    port_holder = {"port": args.port}
+    handler_cls = make_handler(hub_dir, wallpapers_dir, port_holder)
+    server = AeroHubHTTPServer(("127.0.0.1", args.port), handler_cls)
+    port_holder["port"] = server.server_address[1]
+
+    target_url = f"http://127.0.0.1:{port_holder['port']}/?tab={args.tab}"
+
+    if args.serve_only:
+        print(f"AeroOS Control Hub serving at {target_url}", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.shutdown()
+            server.server_close()
+        return 0
+
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        return open_native_window(target_url)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
